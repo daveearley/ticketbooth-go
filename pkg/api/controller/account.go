@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/daveearley/product/pkg/repository"
-	"net/http"
 	"github.com/daveearley/product/pkg/model"
+	"github.com/daveearley/product/pkg/repository"
+	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type AccountController struct {

@@ -2,32 +2,20 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea559439-4642-44ad-8593-f3cea26a5872" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/product.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/main.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/migrate.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd/server.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/api/controller/account.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/api/controller/controller.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/api/middleware/jwt.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/api/routes.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/config/Config.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/db/db.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/account.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/attribute.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/model.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/product.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/product_group.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/transaction.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/model/user.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/repository/account.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/repository/mysql/account.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/api/controller/account.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/controller/account.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/api/controller/controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/controller/controller.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/api/middleware/jwt.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/middleware/jwt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/api/routes.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/routes.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/Config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/Config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/db/db.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/db/db.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/attribute.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/attribute.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/model.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/product.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/product.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/product_group.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/product_group.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/model/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/model/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/repository/mysql/account.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/repository/mysql/account.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -187,8 +175,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pkg/model/user.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="232">
-              <caret line="8" column="4" selection-start-line="8" selection-start-column="4" selection-end-line="8" selection-end-column="4" />
+            <state relative-caret-position="203">
+              <caret line="7" column="20" selection-start-line="7" selection-start-column="20" selection-end-line="7" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -196,8 +184,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pkg/api/middleware/jwt.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="87">
-              <caret line="3" selection-start-line="3" selection-end-line="3" />
+            <state relative-caret-position="29">
+              <caret line="1" selection-start-line="1" selection-end-line="1" />
             </state>
           </provider>
         </entry>
@@ -730,8 +718,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pkg/api/middleware/jwt.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="87">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
+        <state relative-caret-position="29">
+          <caret line="1" selection-start-line="1" selection-end-line="1" />
         </state>
       </provider>
     </entry>
@@ -754,8 +742,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pkg/model/user.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="232">
-          <caret line="8" column="4" selection-start-line="8" selection-start-column="4" selection-end-line="8" selection-end-column="4" />
+        <state relative-caret-position="203">
+          <caret line="7" column="20" selection-start-line="7" selection-start-column="20" selection-end-line="7" selection-end-column="20" />
         </state>
       </provider>
     </entry>

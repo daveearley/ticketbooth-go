@@ -1,9 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"fmt"
 )
 
 const (

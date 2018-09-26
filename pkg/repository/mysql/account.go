@@ -14,7 +14,7 @@ func NewAccountRepository(conn *gorm.DB) repository.AccountRepository {
 	return &AccountRepository{conn}
 }
 
-func (r *AccountRepository) GetById(id uint64) (*model.Account, error)  {
+func (r *AccountRepository) GetById(id uint64) (*model.Account, error) {
 	return &model.Account{
 		Id: 123,
 	}, nil

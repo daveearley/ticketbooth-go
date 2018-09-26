@@ -1,9 +1,9 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/daveearley/product/pkg/api/controller"
 	"github.com/daveearley/product/pkg/repository/mysql"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 )
 

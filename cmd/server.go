@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/daveearley/product/pkg/api"
 	"fmt"
+	"github.com/daveearley/product/pkg/api"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	 _ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 const (
@@ -22,7 +22,6 @@ func main() {
 	checkErr(err)
 
 	defer db.Close()
-
 
 	api.RegisterRoutes(server, db)
 
