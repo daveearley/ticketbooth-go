@@ -4,27 +4,28 @@ import (
 	"github.com/daveearley/product/pkg/model"
 	"github.com/daveearley/product/pkg/repository"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"net/http"
 )
 
 type AccountController struct {
-	rep repository.AccountRepository
+	rep repository.AccountRepositoryI
+	Db  *gorm.DB
 }
 
-func NewAccountController(rep repository.AccountRepository) *AccountController {
-	return &AccountController{rep}
+func NewAccountController(rep repository.AccountRepositoryI, db *gorm.DB) *AccountController {
+	return &AccountController{rep, db}
 }
 
 func (ac *AccountController) GetById(c *gin.Context) {
-	account, err := ac.rep.GetById(1)
+	account, err := ac.rep.GetById(c.Param("id"))
 
 	if err != nil {
-
+		NotFoundResponse(c)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"account": account.Id,
-	})
+	PaginatedResponse(c, account, ac.Db)
 }
 
 func (ac *AccountController) Store(c *gin.Context) {
