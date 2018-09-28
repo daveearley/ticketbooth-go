@@ -2,30 +2,29 @@ package controller
 
 import (
 	"github.com/daveearley/product/pkg/model"
-	"github.com/daveearley/product/pkg/repository"
+	"github.com/daveearley/product/pkg/service"
+	"github.com/daveearley/product/pkg/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"net/http"
 )
 
 type AccountController struct {
-	rep repository.AccountRepositoryI
-	Db  *gorm.DB
+	srv service.AccountServiceI
 }
 
-func NewAccountController(rep repository.AccountRepositoryI, db *gorm.DB) *AccountController {
-	return &AccountController{rep, db}
+func NewAccountController(as service.AccountServiceI) *AccountController {
+	return &AccountController{as}
 }
 
 func (ac *AccountController) GetById(c *gin.Context) {
-	account, err := ac.rep.GetById(c.Param("id"))
+	account, err := ac.srv.Find(utils.Str2Uint(c.Param("id")))
 
 	if err != nil {
 		NotFoundResponse(c)
 		return
 	}
 
-	PaginatedResponse(c, account, ac.Db)
+	JsonResponse(c, account)
 }
 
 func (ac *AccountController) Store(c *gin.Context) {
@@ -35,11 +34,11 @@ func (ac *AccountController) Store(c *gin.Context) {
 		return
 	}
 
-	if err := ac.rep.Store(&account); err != nil {
+	if _, err := ac.srv.CreateAccount(&account); err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	CreatedResponse(c)
+	CreatedResponse(c, account)
 	return
 }

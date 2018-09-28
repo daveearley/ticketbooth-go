@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-func CreatedResponse(c *gin.Context) {
-	c.String(http.StatusCreated, "")
+func CreatedResponse(c *gin.Context, model interface{}) {
+	c.JSON(http.StatusCreated, &model)
 }
 
 func ErrorResponse(c *gin.Context, statusCode int, err error) {

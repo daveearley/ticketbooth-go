@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/daveearley/product/pkg/utils"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -15,13 +16,7 @@ const (
 func InitDb() *gorm.DB {
 	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
 	db, err := gorm.Open("postgres", dbinfo)
-	checkErr(err)
+	utils.CheckErr(err)
 
 	return db
-}
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

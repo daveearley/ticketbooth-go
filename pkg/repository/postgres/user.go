@@ -13,7 +13,7 @@ func NewUserRepository(conn *gorm.DB) *UserRepository {
 	return &UserRepository{conn}
 }
 
-func (r *UserRepository) GetById(id string) (*model.User, error) {
+func (r *UserRepository) GetById(id uint64) (*model.User, error) {
 	ac := &model.User{}
 
 	if err := r.Db.Preload("Users").First(ac, id).Error; err != nil {
@@ -23,10 +23,10 @@ func (r *UserRepository) GetById(id string) (*model.User, error) {
 	return ac, nil
 }
 
-func (r *UserRepository) Store(a *model.User) error {
+func (r *UserRepository) Store(a *model.User) (*model.User, error) {
 	if err := r.Db.Create(&a).Error; err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return a, nil
 }

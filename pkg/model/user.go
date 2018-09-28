@@ -2,12 +2,12 @@ package model
 
 type User struct {
 	Model
-	Email     string
-	Password  string
-	FirstName string
-	LastName  string
-	Status    string
-	AccountId int
+	Email     string `json:"email" binding:"email,required"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Status    string `json:"status"`
+	AccountId int    `json:"account_id"`
 }
 
 //func (u *User) BeforeSave() (err error)  {
