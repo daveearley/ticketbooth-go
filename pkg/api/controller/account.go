@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/daveearley/product/pkg/model"
+	"github.com/daveearley/product/pkg/api/request"
 	"github.com/daveearley/product/pkg/service"
 	"github.com/daveearley/product/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -27,14 +27,16 @@ func (ac *AccountController) GetById(c *gin.Context) {
 	JsonResponse(c, account)
 }
 
-func (ac *AccountController) Store(c *gin.Context) {
-	account := model.Account{}
-	if err := c.ShouldBindJSON(&account); err != nil {
+func (ac *AccountController) CreateAccount(c *gin.Context) {
+	createRequest := request.CreateAccount{}
+	if err := c.ShouldBindJSON(&createRequest); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
-	if _, err := ac.srv.CreateAccount(&account); err != nil {
+	account, err := ac.srv.CreateAccount(&createRequest)
+
+	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}

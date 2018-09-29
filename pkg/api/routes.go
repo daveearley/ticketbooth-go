@@ -23,7 +23,7 @@ func RegisterRoutes(server *gin.Engine, db *gorm.DB) {
 					repository.NewUserRepository(db),
 				),
 			)
-			accountGroup.POST("", accountController.Store)
+			accountGroup.POST("", accountController.CreateAccount)
 			accountGroup.GET(":id", accountController.GetById)
 		}
 	}

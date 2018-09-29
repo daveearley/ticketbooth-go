@@ -14,7 +14,7 @@ func CreatedResponse(c *gin.Context, model interface{}) {
 
 func ErrorResponse(c *gin.Context, statusCode int, err error) {
 	c.JSON(statusCode, gin.H{
-		"error": err.Error(),
+		"error": err,
 	})
 }
 
