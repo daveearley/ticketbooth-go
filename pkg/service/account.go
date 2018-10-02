@@ -22,19 +22,19 @@ func (s *AccountService) Find(id uint64) (*model.Account, error) {
 func (s *AccountService) CreateAccount(request *request.CreateAccount) (*model.Account, error) {
 	account, err := s.ar.Store(&model.Account{
 		Email: request.Email,
+		Users: []model.User{
+			{
+				Email:     request.Email,
+				FirstName: request.FirstName,
+				LastName:  request.LastName,
+				Password:  request.Password,
+			},
+		},
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
-	_, err = s.ur.Store(&model.User{
-		Email:     request.Email,
-		FirstName: request.FirstName,
-		LastName:  request.LastName,
-		AccountId: account.ID,
-		Password:  request.Password,
-	})
 
 	return account, err
 }
