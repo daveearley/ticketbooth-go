@@ -5,10 +5,10 @@ import (
 	"github.com/daveearley/product/pkg/repository/postgres"
 	"github.com/daveearley/product/pkg/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"database/sql"
 )
 
-func RegisterRoutes(server *gin.Engine, db *gorm.DB) {
+func RegisterRoutes(server *gin.Engine, db *sql.DB) {
 	server.GET("/healthcheck", func(context *gin.Context) {
 		controller.StringResponse(context, "")
 	})

@@ -11,7 +11,6 @@ func main() {
 	server := gin.Default()
 
 	db := database.InitDb()
-	db.AutoMigrate(&model.Account{}, &model.User{})
 	defer db.Close()
 
 	api.RegisterRoutes(server, db)

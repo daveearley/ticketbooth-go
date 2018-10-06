@@ -2,14 +2,14 @@ package repository
 
 import (
 	"github.com/daveearley/product/pkg/model"
-	"github.com/jinzhu/gorm"
+	"database/sql"
 )
 
 type UserRepository struct {
-	Db *gorm.DB
+	Db *sql.DB
 }
 
-func NewUserRepository(conn *gorm.DB) *UserRepository {
+func NewUserRepository(conn *sql.DB) *UserRepository {
 	return &UserRepository{conn}
 }
 

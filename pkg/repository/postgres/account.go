@@ -2,23 +2,23 @@ package repository
 
 import (
 	"github.com/daveearley/product/pkg/model"
-	"github.com/jinzhu/gorm"
+	"database/sql"
 )
 
 type AccountRepository struct {
-	Db *gorm.DB
+	Db *sql.DB
 }
 
-func NewAccountRepository(conn *gorm.DB) *AccountRepository {
+func NewAccountRepository(conn *sql.DB) *AccountRepository {
 	return &AccountRepository{conn}
 }
 
 func (r *AccountRepository) GetById(id uint64) (*model.Account, error) {
 	ac := &model.Account{}
 
-	if err := r.Db.Preload("Users").First(ac, id).Error; err != nil {
-		return nil, err
-	}
+	//if err := r.Db.Preload("Users").First(ac, id).Error; err != nil {
+	//	return nil, err
+	//}
 
 	return ac, nil
 }
