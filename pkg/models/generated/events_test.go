@@ -1393,57 +1393,6 @@ func testEventToManyAddOpTransactions(t *testing.T) {
 		}
 	}
 }
-func testEventToOneAccountUserUsingUser(t *testing.T) {
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var local Event
-	var foreign AccountUser
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, eventDBTypes, false, eventColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Event struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, accountUserDBTypes, false, accountUserColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize AccountUser struct: %s", err)
-	}
-
-	if err := foreign.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.UserID = foreign.ID
-	if err := local.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.User().One(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := EventSlice{&local}
-	if err = local.L.LoadUser(tx, false, (*[]*Event)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.User == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.User = nil
-	if err = local.L.LoadUser(tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.User == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testEventToOneAccountUsingAccount(t *testing.T) {
 
 	tx := MustTx(boil.Begin())
@@ -1495,62 +1444,57 @@ func testEventToOneAccountUsingAccount(t *testing.T) {
 	}
 }
 
-func testEventToOneSetOpAccountUserUsingUser(t *testing.T) {
-	var err error
+func testEventToOneUserUsingUser(t *testing.T) {
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
-	var a Event
-	var b, c AccountUser
+	var local Event
+	var foreign User
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, eventDBTypes, false, strmangle.SetComplement(eventPrimaryKeyColumns, eventColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, eventDBTypes, false, eventColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Event struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, accountUserDBTypes, false, strmangle.SetComplement(accountUserPrimaryKeyColumns, accountUserColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, accountUserDBTypes, false, strmangle.SetComplement(accountUserPrimaryKeyColumns, accountUserColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, userDBTypes, false, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*AccountUser{&b, &c} {
-		err = a.SetUser(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
+	local.UserID = foreign.ID
+	if err := local.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-		if a.R.User != x {
-			t.Error("relationship struct not set to correct value")
-		}
+	check, err := local.User().One(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if x.R.UserEvents[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.UserID != x.ID {
-			t.Error("foreign key was wrong value", a.UserID)
-		}
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
 
-		zero := reflect.Zero(reflect.TypeOf(a.UserID))
-		reflect.Indirect(reflect.ValueOf(&a.UserID)).Set(zero)
+	slice := EventSlice{&local}
+	if err = local.L.LoadUser(tx, false, (*[]*Event)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.User == nil {
+		t.Error("struct should have been eager loaded")
+	}
 
-		if err = a.Reload(tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.UserID != x.ID {
-			t.Error("foreign key was wrong value", a.UserID, x.ID)
-		}
+	local.R.User = nil
+	if err = local.L.LoadUser(tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.User == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
+
 func testEventToOneSetOpAccountUsingAccount(t *testing.T) {
 	var err error
 
@@ -1604,6 +1548,62 @@ func testEventToOneSetOpAccountUsingAccount(t *testing.T) {
 
 		if a.AccountID != x.ID {
 			t.Error("foreign key was wrong value", a.AccountID, x.ID)
+		}
+	}
+}
+func testEventToOneSetOpUserUsingUser(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Event
+	var b, c User
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, eventDBTypes, false, strmangle.SetComplement(eventPrimaryKeyColumns, eventColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*User{&b, &c} {
+		err = a.SetUser(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.User != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Events[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.UserID != x.ID {
+			t.Error("foreign key was wrong value", a.UserID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.UserID))
+		reflect.Indirect(reflect.ValueOf(&a.UserID)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.UserID != x.ID {
+			t.Error("foreign key was wrong value", a.UserID, x.ID)
 		}
 	}
 }
@@ -1679,7 +1679,7 @@ func testEventsSelect(t *testing.T) {
 }
 
 var (
-	eventDBTypes = map[string]string{`AccountID`: `integer`, `CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `EndDate`: `timestamp without time zone`, `ID`: `integer`, `StartDate`: `timestamp without time zone`, `Status`: `enum.event_status('ACTIVE')`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`, `UserID`: `integer`}
+	eventDBTypes = map[string]string{`AccountID`: `integer`, `CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `Description`: `text`, `EndDate`: `timestamp without time zone`, `ID`: `integer`, `StartDate`: `timestamp without time zone`, `Status`: `enum.event_status('ACTIVE')`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`, `UserID`: `integer`}
 	_            = bytes.MinRead
 )
 

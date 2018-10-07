@@ -15,3 +15,8 @@ type AccountServiceI interface {
 	CreateAccount(request *request.CreateAccount) (*models.Account, error)
 	DeleteAccount(account *models.Account) error
 }
+
+type EventServiceI interface {
+	Find(id int) (*models.Event, error)
+	CreateEvent(event request.CreateEvent) (*models.Event, error)
+}

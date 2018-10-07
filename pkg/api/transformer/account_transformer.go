@@ -1,11 +1,11 @@
 package transformer
 
 import (
-	"github.com/daveearley/product/pkg/model"
+	"github.com/daveearley/product/pkg/models/generated"
 	"github.com/gin-gonic/gin"
 )
 
-func AccountTransformer(ac *model.Account) *gin.H {
+func AccountTransformer(ac *models.Account) *gin.H {
 	return &gin.H{
 		"data": ac,
 	}

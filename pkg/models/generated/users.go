@@ -64,13 +64,16 @@ var UserColumns = struct {
 // UserRels is where relationship names are stored.
 var UserRels = struct {
 	Account string
+	Events  string
 }{
 	Account: "Account",
+	Events:  "Events",
 }
 
 // userR is where relationships are stored.
 type userR struct {
 	Account *Account
+	Events  EventSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -337,6 +340,27 @@ func (o *User) Account(mods ...qm.QueryMod) accountQuery {
 	return query
 }
 
+// Events retrieves all the event's Events with an executor.
+func (o *User) Events(mods ...qm.QueryMod) eventQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"events\".\"user_id\"=?", o.ID),
+	)
+
+	query := Events(queryMods...)
+	queries.SetFrom(query.Query, "\"events\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"events\".*"})
+	}
+
+	return query
+}
+
 // LoadAccount allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (userL) LoadAccount(e boil.Executor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
@@ -432,6 +456,97 @@ func (userL) LoadAccount(e boil.Executor, singular bool, maybeUser interface{}, 
 	return nil
 }
 
+// LoadEvents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadEvents(e boil.Executor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`events`), qm.WhereIn(`user_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load events")
+	}
+
+	var resultSlice []*Event
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice events")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on events")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for events")
+	}
+
+	if len(eventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Events = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &eventR{}
+			}
+			foreign.R.User = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.UserID {
+				local.R.Events = append(local.R.Events, foreign)
+				if foreign.R == nil {
+					foreign.R = &eventR{}
+				}
+				foreign.R.User = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the user to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.Users.
@@ -476,6 +591,59 @@ func (o *User) SetAccount(exec boil.Executor, insert bool, related *Account) err
 		related.R.Users = append(related.R.Users, o)
 	}
 
+	return nil
+}
+
+// AddEvents adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.Events.
+// Sets related.R.User appropriately.
+func (o *User) AddEvents(exec boil.Executor, insert bool, related ...*Event) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.UserID = o.ID
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"events\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+				strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.UserID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			Events: related,
+		}
+	} else {
+		o.R.Events = append(o.R.Events, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &eventR{
+				User: o,
+			}
+		} else {
+			rel.R.User = o
+		}
+	}
 	return nil
 }
 

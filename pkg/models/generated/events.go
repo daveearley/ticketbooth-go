@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -21,49 +22,52 @@ import (
 
 // Event is an object representing the database table.
 type Event struct {
-	ID        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Title     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	AccountID int       `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	UserID    int       `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	Status    string    `boil:"status" json:"status" toml:"status" yaml:"status"`
-	StartDate time.Time `boil:"start_date" json:"start_date" toml:"start_date" yaml:"start_date"`
-	EndDate   time.Time `boil:"end_date" json:"end_date" toml:"end_date" yaml:"end_date"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	ID          int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Title       string      `boil:"title" json:"title" toml:"title" yaml:"title"`
+	AccountID   int         `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	UserID      int         `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
+	Status      null.String `boil:"status" json:"status,omitempty" toml:"status" yaml:"status,omitempty"`
+	StartDate   time.Time   `boil:"start_date" json:"start_date" toml:"start_date" yaml:"start_date"`
+	EndDate     time.Time   `boil:"end_date" json:"end_date" toml:"end_date" yaml:"end_date"`
+	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt   time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt   time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 
 	R *eventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var EventColumns = struct {
-	ID        string
-	Title     string
-	AccountID string
-	UserID    string
-	Status    string
-	StartDate string
-	EndDate   string
-	CreatedAt string
-	UpdatedAt string
-	DeletedAt string
+	ID          string
+	Title       string
+	AccountID   string
+	UserID      string
+	Status      string
+	StartDate   string
+	EndDate     string
+	CreatedAt   string
+	UpdatedAt   string
+	DeletedAt   string
+	Description string
 }{
-	ID:        "id",
-	Title:     "title",
-	AccountID: "account_id",
-	UserID:    "user_id",
-	Status:    "status",
-	StartDate: "start_date",
-	EndDate:   "end_date",
-	CreatedAt: "created_at",
-	UpdatedAt: "updated_at",
-	DeletedAt: "deleted_at",
+	ID:          "id",
+	Title:       "title",
+	AccountID:   "account_id",
+	UserID:      "user_id",
+	Status:      "status",
+	StartDate:   "start_date",
+	EndDate:     "end_date",
+	CreatedAt:   "created_at",
+	UpdatedAt:   "updated_at",
+	DeletedAt:   "deleted_at",
+	Description: "description",
 }
 
 // EventRels is where relationship names are stored.
 var EventRels = struct {
-	User            string
 	Account         string
+	User            string
 	Attendees       string
 	Customers       string
 	EventAttributes string
@@ -71,8 +75,8 @@ var EventRels = struct {
 	Tickets         string
 	Transactions    string
 }{
-	User:            "User",
 	Account:         "Account",
+	User:            "User",
 	Attendees:       "Attendees",
 	Customers:       "Customers",
 	EventAttributes: "EventAttributes",
@@ -83,8 +87,8 @@ var EventRels = struct {
 
 // eventR is where relationships are stored.
 type eventR struct {
-	User            *AccountUser
 	Account         *Account
+	User            *User
 	Attendees       AttendeeSlice
 	Customers       CustomerSlice
 	EventAttributes EventAttributeSlice
@@ -102,8 +106,8 @@ func (*eventR) NewStruct() *eventR {
 type eventL struct{}
 
 var (
-	eventColumns               = []string{"id", "title", "account_id", "user_id", "status", "start_date", "end_date", "created_at", "updated_at", "deleted_at"}
-	eventColumnsWithoutDefault = []string{"title", "account_id", "user_id", "status", "start_date", "end_date", "created_at", "updated_at", "deleted_at"}
+	eventColumns               = []string{"id", "title", "account_id", "user_id", "status", "start_date", "end_date", "created_at", "updated_at", "deleted_at", "description"}
+	eventColumnsWithoutDefault = []string{"title", "account_id", "user_id", "status", "start_date", "end_date", "created_at", "updated_at", "deleted_at", "description"}
 	eventColumnsWithDefault    = []string{"id"}
 	eventPrimaryKeyColumns     = []string{"id"}
 )
@@ -343,20 +347,6 @@ func (q eventQuery) Exists(exec boil.Executor) (bool, error) {
 	return count > 0, nil
 }
 
-// User pointed to by the foreign key.
-func (o *Event) User(mods ...qm.QueryMod) accountUserQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.UserID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := AccountUsers(queryMods...)
-	queries.SetFrom(query.Query, "\"account_users\"")
-
-	return query
-}
-
 // Account pointed to by the foreign key.
 func (o *Event) Account(mods ...qm.QueryMod) accountQuery {
 	queryMods := []qm.QueryMod{
@@ -367,6 +357,20 @@ func (o *Event) Account(mods ...qm.QueryMod) accountQuery {
 
 	query := Accounts(queryMods...)
 	queries.SetFrom(query.Query, "\"accounts\"")
+
+	return query
+}
+
+// User pointed to by the foreign key.
+func (o *Event) User(mods ...qm.QueryMod) userQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.UserID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Users(queryMods...)
+	queries.SetFrom(query.Query, "\"users\"")
 
 	return query
 }
@@ -497,101 +501,6 @@ func (o *Event) Transactions(mods ...qm.QueryMod) transactionQuery {
 	return query
 }
 
-// LoadUser allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (eventL) LoadUser(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
-	var slice []*Event
-	var object *Event
-
-	if singular {
-		object = maybeEvent.(*Event)
-	} else {
-		slice = *maybeEvent.(*[]*Event)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &eventR{}
-		}
-		args = append(args, object.UserID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &eventR{}
-			}
-
-			for _, a := range args {
-				if a == obj.UserID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.UserID)
-		}
-	}
-
-	query := NewQuery(qm.From(`account_users`), qm.WhereIn(`id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.Query(e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load AccountUser")
-	}
-
-	var resultSlice []*AccountUser
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice AccountUser")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for account_users")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for account_users")
-	}
-
-	if len(eventAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.User = foreign
-		if foreign.R == nil {
-			foreign.R = &accountUserR{}
-		}
-		foreign.R.UserEvents = append(foreign.R.UserEvents, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.UserID == foreign.ID {
-				local.R.User = foreign
-				if foreign.R == nil {
-					foreign.R = &accountUserR{}
-				}
-				foreign.R.UserEvents = append(foreign.R.UserEvents, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadAccount allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (eventL) LoadAccount(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
@@ -677,6 +586,101 @@ func (eventL) LoadAccount(e boil.Executor, singular bool, maybeEvent interface{}
 				local.R.Account = foreign
 				if foreign.R == nil {
 					foreign.R = &accountR{}
+				}
+				foreign.R.Events = append(foreign.R.Events, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadUser allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (eventL) LoadUser(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
+	var slice []*Event
+	var object *Event
+
+	if singular {
+		object = maybeEvent.(*Event)
+	} else {
+		slice = *maybeEvent.(*[]*Event)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &eventR{}
+		}
+		args = append(args, object.UserID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &eventR{}
+			}
+
+			for _, a := range args {
+				if a == obj.UserID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.UserID)
+		}
+	}
+
+	query := NewQuery(qm.From(`users`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load User")
+	}
+
+	var resultSlice []*User
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice User")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for users")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for users")
+	}
+
+	if len(eventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.User = foreign
+		if foreign.R == nil {
+			foreign.R = &userR{}
+		}
+		foreign.R.Events = append(foreign.R.Events, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.UserID == foreign.ID {
+				local.R.User = foreign
+				if foreign.R == nil {
+					foreign.R = &userR{}
 				}
 				foreign.R.Events = append(foreign.R.Events, local)
 				break
@@ -1233,53 +1237,6 @@ func (eventL) LoadTransactions(e boil.Executor, singular bool, maybeEvent interf
 	return nil
 }
 
-// SetUser of the event to the related item.
-// Sets o.R.User to related.
-// Adds o to related.R.UserEvents.
-func (o *Event) SetUser(exec boil.Executor, insert bool, related *AccountUser) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"events\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
-		strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.UserID = related.ID
-	if o.R == nil {
-		o.R = &eventR{
-			User: related,
-		}
-	} else {
-		o.R.User = related
-	}
-
-	if related.R == nil {
-		related.R = &accountUserR{
-			UserEvents: EventSlice{o},
-		}
-	} else {
-		related.R.UserEvents = append(related.R.UserEvents, o)
-	}
-
-	return nil
-}
-
 // SetAccount of the event to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.Events.
@@ -1318,6 +1275,53 @@ func (o *Event) SetAccount(exec boil.Executor, insert bool, related *Account) er
 
 	if related.R == nil {
 		related.R = &accountR{
+			Events: EventSlice{o},
+		}
+	} else {
+		related.R.Events = append(related.R.Events, o)
+	}
+
+	return nil
+}
+
+// SetUser of the event to the related item.
+// Sets o.R.User to related.
+// Adds o to related.R.Events.
+func (o *Event) SetUser(exec boil.Executor, insert bool, related *User) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"events\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+		strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.UserID = related.ID
+	if o.R == nil {
+		o.R = &eventR{
+			User: related,
+		}
+	} else {
+		o.R.User = related
+	}
+
+	if related.R == nil {
+		related.R = &userR{
 			Events: EventSlice{o},
 		}
 	} else {

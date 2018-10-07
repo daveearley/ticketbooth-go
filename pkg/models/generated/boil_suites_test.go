@@ -307,8 +307,8 @@ func TestToOne(t *testing.T) {
 	t.Run("EventAttributeToAttributeUsingAttribute", testEventAttributeToOneAttributeUsingAttribute)
 	t.Run("EventQuestionToEventUsingEvent", testEventQuestionToOneEventUsingEvent)
 	t.Run("EventQuestionToQuestionUsingQuestion", testEventQuestionToOneQuestionUsingQuestion)
-	t.Run("EventToAccountUserUsingUser", testEventToOneAccountUserUsingUser)
 	t.Run("EventToAccountUsingAccount", testEventToOneAccountUsingAccount)
+	t.Run("EventToUserUsingUser", testEventToOneUserUsingUser)
 	t.Run("QuestionAnswerToQuestionUsingQuestion", testQuestionAnswerToOneQuestionUsingQuestion)
 	t.Run("TicketAttributeToTicketUsingTicket", testTicketAttributeToOneTicketUsingTicket)
 	t.Run("TicketAttributeToAttributeUsingAttribute", testTicketAttributeToOneAttributeUsingAttribute)
@@ -333,7 +333,6 @@ func TestOneToOne(t *testing.T) {}
 // TestToMany tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
-	t.Run("AccountUserToUserEvents", testAccountUserToManyUserEvents)
 	t.Run("AccountToAccountUsers", testAccountToManyAccountUsers)
 	t.Run("AccountToEvents", testAccountToManyEvents)
 	t.Run("AccountToUsers", testAccountToManyUsers)
@@ -360,6 +359,7 @@ func TestToMany(t *testing.T) {
 	t.Run("TransactionToTransactionAttributes", testTransactionToManyTransactionAttributes)
 	t.Run("TransactionToTransactionDiscountCodes", testTransactionToManyTransactionDiscountCodes)
 	t.Run("TransactionToTransactionItems", testTransactionToManyTransactionItems)
+	t.Run("UserToEvents", testUserToManyEvents)
 }
 
 // TestToOneSet tests cannot be run in parallel
@@ -375,8 +375,8 @@ func TestToOneSet(t *testing.T) {
 	t.Run("EventAttributeToAttributeUsingEventAttributes", testEventAttributeToOneSetOpAttributeUsingAttribute)
 	t.Run("EventQuestionToEventUsingEventQuestions", testEventQuestionToOneSetOpEventUsingEvent)
 	t.Run("EventQuestionToQuestionUsingEventQuestions", testEventQuestionToOneSetOpQuestionUsingQuestion)
-	t.Run("EventToAccountUserUsingUserEvents", testEventToOneSetOpAccountUserUsingUser)
 	t.Run("EventToAccountUsingEvents", testEventToOneSetOpAccountUsingAccount)
+	t.Run("EventToUserUsingEvents", testEventToOneSetOpUserUsingUser)
 	t.Run("QuestionAnswerToQuestionUsingQuestionAnswers", testQuestionAnswerToOneSetOpQuestionUsingQuestion)
 	t.Run("TicketAttributeToTicketUsingTicketAttributes", testTicketAttributeToOneSetOpTicketUsingTicket)
 	t.Run("TicketAttributeToAttributeUsingTicketAttributes", testTicketAttributeToOneSetOpAttributeUsingAttribute)
@@ -409,7 +409,6 @@ func TestOneToOneRemove(t *testing.T) {}
 // TestToManyAdd tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
-	t.Run("AccountUserToUserEvents", testAccountUserToManyAddOpUserEvents)
 	t.Run("AccountToAccountUsers", testAccountToManyAddOpAccountUsers)
 	t.Run("AccountToEvents", testAccountToManyAddOpEvents)
 	t.Run("AccountToUsers", testAccountToManyAddOpUsers)
@@ -436,6 +435,7 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("TransactionToTransactionAttributes", testTransactionToManyAddOpTransactionAttributes)
 	t.Run("TransactionToTransactionDiscountCodes", testTransactionToManyAddOpTransactionDiscountCodes)
 	t.Run("TransactionToTransactionItems", testTransactionToManyAddOpTransactionItems)
+	t.Run("UserToEvents", testUserToManyAddOpEvents)
 }
 
 // TestToManySet tests cannot be run in parallel
