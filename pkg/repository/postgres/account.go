@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/daveearley/product/pkg/models/generated"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type AccountRepository struct {

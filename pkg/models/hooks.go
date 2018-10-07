@@ -1,9 +1,9 @@
 package models
 
 import (
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/daveearley/product/pkg/models/generated"
 	"github.com/daveearley/product/pkg/utils"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 // Before insert hook to hash user password
@@ -14,6 +14,6 @@ func userInsertHook(executor boil.Executor, u *models.User) error {
 	return nil
 }
 
-func RegisterHooks()  {
+func RegisterHooks() {
 	models.AddUserHook(boil.BeforeInsertHook, userInsertHook)
 }

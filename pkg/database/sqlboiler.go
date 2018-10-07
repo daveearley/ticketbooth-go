@@ -3,9 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"github.com/daveearley/product/pkg/models"
 	"github.com/daveearley/product/pkg/utils"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/daveearley/product/pkg/models"
 )
 
 const (

@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/daveearley/product/pkg/api/request"
-	r "github.com/daveearley/product/pkg/repository"
 	"github.com/daveearley/product/pkg/models/generated"
+	r "github.com/daveearley/product/pkg/repository"
 )
 
 type AccountService struct {

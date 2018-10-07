@@ -1,11 +1,11 @@
 package api
 
 import (
+	"database/sql"
 	"github.com/daveearley/product/pkg/api/controller"
 	"github.com/daveearley/product/pkg/repository/postgres"
 	"github.com/daveearley/product/pkg/service"
 	"github.com/gin-gonic/gin"
-	"database/sql"
 )
 
 func RegisterRoutes(server *gin.Engine, db *sql.DB) {
