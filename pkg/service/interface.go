@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/models"
+	"github.com/daveearley/product/pkg/models/generated"
 )
 
 type UserServiceI interface {

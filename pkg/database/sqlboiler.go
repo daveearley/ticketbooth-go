@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/daveearley/product/pkg/utils"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/daveearley/product/pkg/models"
 )
 
 const (
@@ -18,6 +19,8 @@ func InitDb() *sql.DB {
 
 	db, err := sql.Open("postgres", dbStr)
 	utils.CheckErr(err)
+
+	models.RegisterHooks()
 
 	return db
 }

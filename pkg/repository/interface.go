@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/daveearley/product/pkg/models"
+import "github.com/daveearley/product/pkg/models/generated"
 
 type AccountRepositoryI interface {
 	GetById(id int) (*models.Account, error)
