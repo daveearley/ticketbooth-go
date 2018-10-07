@@ -62,8 +62,8 @@ var EventColumns = struct {
 
 // EventRels is where relationship names are stored.
 var EventRels = struct {
-	Account         string
 	User            string
+	Account         string
 	Attendees       string
 	Customers       string
 	EventAttributes string
@@ -71,8 +71,8 @@ var EventRels = struct {
 	Tickets         string
 	Transactions    string
 }{
-	Account:         "Account",
 	User:            "User",
+	Account:         "Account",
 	Attendees:       "Attendees",
 	Customers:       "Customers",
 	EventAttributes: "EventAttributes",
@@ -83,8 +83,8 @@ var EventRels = struct {
 
 // eventR is where relationships are stored.
 type eventR struct {
-	Account         *Account
 	User            *AccountUser
+	Account         *Account
 	Attendees       AttendeeSlice
 	Customers       CustomerSlice
 	EventAttributes EventAttributeSlice
@@ -343,20 +343,6 @@ func (q eventQuery) Exists(exec boil.Executor) (bool, error) {
 	return count > 0, nil
 }
 
-// Account pointed to by the foreign key.
-func (o *Event) Account(mods ...qm.QueryMod) accountQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.AccountID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Accounts(queryMods...)
-	queries.SetFrom(query.Query, "\"accounts\"")
-
-	return query
-}
-
 // User pointed to by the foreign key.
 func (o *Event) User(mods ...qm.QueryMod) accountUserQuery {
 	queryMods := []qm.QueryMod{
@@ -367,6 +353,20 @@ func (o *Event) User(mods ...qm.QueryMod) accountUserQuery {
 
 	query := AccountUsers(queryMods...)
 	queries.SetFrom(query.Query, "\"account_users\"")
+
+	return query
+}
+
+// Account pointed to by the foreign key.
+func (o *Event) Account(mods ...qm.QueryMod) accountQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.AccountID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Accounts(queryMods...)
+	queries.SetFrom(query.Query, "\"accounts\"")
 
 	return query
 }
@@ -497,101 +497,6 @@ func (o *Event) Transactions(mods ...qm.QueryMod) transactionQuery {
 	return query
 }
 
-// LoadAccount allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (eventL) LoadAccount(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
-	var slice []*Event
-	var object *Event
-
-	if singular {
-		object = maybeEvent.(*Event)
-	} else {
-		slice = *maybeEvent.(*[]*Event)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &eventR{}
-		}
-		args = append(args, object.AccountID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &eventR{}
-			}
-
-			for _, a := range args {
-				if a == obj.AccountID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.AccountID)
-		}
-	}
-
-	query := NewQuery(qm.From(`accounts`), qm.WhereIn(`id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.Query(e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Account")
-	}
-
-	var resultSlice []*Account
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Account")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for accounts")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
-	}
-
-	if len(eventAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Account = foreign
-		if foreign.R == nil {
-			foreign.R = &accountR{}
-		}
-		foreign.R.Events = append(foreign.R.Events, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.AccountID == foreign.ID {
-				local.R.Account = foreign
-				if foreign.R == nil {
-					foreign.R = &accountR{}
-				}
-				foreign.R.Events = append(foreign.R.Events, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadUser allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (eventL) LoadUser(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
@@ -679,6 +584,101 @@ func (eventL) LoadUser(e boil.Executor, singular bool, maybeEvent interface{}, m
 					foreign.R = &accountUserR{}
 				}
 				foreign.R.UserEvents = append(foreign.R.UserEvents, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAccount allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (eventL) LoadAccount(e boil.Executor, singular bool, maybeEvent interface{}, mods queries.Applicator) error {
+	var slice []*Event
+	var object *Event
+
+	if singular {
+		object = maybeEvent.(*Event)
+	} else {
+		slice = *maybeEvent.(*[]*Event)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &eventR{}
+		}
+		args = append(args, object.AccountID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &eventR{}
+			}
+
+			for _, a := range args {
+				if a == obj.AccountID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.AccountID)
+		}
+	}
+
+	query := NewQuery(qm.From(`accounts`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Account")
+	}
+
+	var resultSlice []*Account
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Account")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
+	}
+
+	if len(eventAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Account = foreign
+		if foreign.R == nil {
+			foreign.R = &accountR{}
+		}
+		foreign.R.Events = append(foreign.R.Events, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.AccountID == foreign.ID {
+				local.R.Account = foreign
+				if foreign.R == nil {
+					foreign.R = &accountR{}
+				}
+				foreign.R.Events = append(foreign.R.Events, local)
 				break
 			}
 		}
@@ -1233,53 +1233,6 @@ func (eventL) LoadTransactions(e boil.Executor, singular bool, maybeEvent interf
 	return nil
 }
 
-// SetAccount of the event to the related item.
-// Sets o.R.Account to related.
-// Adds o to related.R.Events.
-func (o *Event) SetAccount(exec boil.Executor, insert bool, related *Account) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"events\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
-		strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.AccountID = related.ID
-	if o.R == nil {
-		o.R = &eventR{
-			Account: related,
-		}
-	} else {
-		o.R.Account = related
-	}
-
-	if related.R == nil {
-		related.R = &accountR{
-			Events: EventSlice{o},
-		}
-	} else {
-		related.R.Events = append(related.R.Events, o)
-	}
-
-	return nil
-}
-
 // SetUser of the event to the related item.
 // Sets o.R.User to related.
 // Adds o to related.R.UserEvents.
@@ -1322,6 +1275,53 @@ func (o *Event) SetUser(exec boil.Executor, insert bool, related *AccountUser) e
 		}
 	} else {
 		related.R.UserEvents = append(related.R.UserEvents, o)
+	}
+
+	return nil
+}
+
+// SetAccount of the event to the related item.
+// Sets o.R.Account to related.
+// Adds o to related.R.Events.
+func (o *Event) SetAccount(exec boil.Executor, insert bool, related *Account) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"events\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+		strmangle.WhereClause("\"", "\"", 2, eventPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.AccountID = related.ID
+	if o.R == nil {
+		o.R = &eventR{
+			Account: related,
+		}
+	} else {
+		o.R.Account = related
+	}
+
+	if related.R == nil {
+		related.R = &accountR{
+			Events: EventSlice{o},
+		}
+	} else {
+		related.R.Events = append(related.R.Events, o)
 	}
 
 	return nil

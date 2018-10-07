@@ -17,7 +17,7 @@ func NewAccountController(as service.AccountServiceI) *AccountController {
 }
 
 func (ac *AccountController) GetById(c *gin.Context) {
-	account, err := ac.srv.Find(utils.Str2Uint(c.Param("id")))
+	account, err := ac.srv.Find(utils.Str2int(c.Param("id")))
 
 	if err != nil {
 		NotFoundResponse(c)

@@ -2,16 +2,16 @@ package service
 
 import (
 	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/model"
+	"github.com/daveearley/product/pkg/models"
 )
 
 type UserServiceI interface {
-	CreateUser(user *model.User) (*model.User, error)
-	DeleteUser(user *model.User) error
+	CreateUser(user *models.User) (*models.User, error)
+	DeleteUser(user *models.User) error
 }
 
 type AccountServiceI interface {
-	Find(id uint64) (*model.Account, error)
-	CreateAccount(request *request.CreateAccount) (*model.Account, error)
-	DeleteAccount(account *model.Account) error
+	Find(id int) (*models.Account, error)
+	CreateAccount(request *request.CreateAccount) (*models.Account, error)
+	DeleteAccount(account *models.Account) error
 }

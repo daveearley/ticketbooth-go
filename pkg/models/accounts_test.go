@@ -662,8 +662,9 @@ func testAccountToManyUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&b.AccountID, a.ID)
-	queries.Assign(&c.AccountID, a.ID)
+	b.AccountID = a.ID
+	c.AccountID = a.ID
+
 	if err = b.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -678,10 +679,10 @@ func testAccountToManyUsers(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range user {
-		if queries.Equal(v.AccountID, b.AccountID) {
+		if v.AccountID == b.AccountID {
 			bFound = true
 		}
-		if queries.Equal(v.AccountID, c.AccountID) {
+		if v.AccountID == c.AccountID {
 			cFound = true
 		}
 	}
@@ -906,10 +907,10 @@ func testAccountToManyAddOpUsers(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if !queries.Equal(a.ID, first.AccountID) {
+		if a.ID != first.AccountID {
 			t.Error("foreign key was wrong value", a.ID, first.AccountID)
 		}
-		if !queries.Equal(a.ID, second.AccountID) {
+		if a.ID != second.AccountID {
 			t.Error("foreign key was wrong value", a.ID, second.AccountID)
 		}
 
@@ -934,179 +935,6 @@ func testAccountToManyAddOpUsers(t *testing.T) {
 		if want := int64((i + 1) * 2); count != want {
 			t.Error("want", want, "got", count)
 		}
-	}
-}
-
-func testAccountToManySetOpUsers(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Account
-	var b, c, d, e User
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*User{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetUsers(tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Users().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetUsers(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Users().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.AccountID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.AccountID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.AccountID) {
-		t.Error("foreign key was wrong value", a.ID, d.AccountID)
-	}
-	if !queries.Equal(a.ID, e.AccountID) {
-		t.Error("foreign key was wrong value", a.ID, e.AccountID)
-	}
-
-	if b.R.Account != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Account != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Account != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Account != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Users[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Users[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testAccountToManyRemoveOpUsers(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Account
-	var b, c, d, e User
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*User{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddUsers(tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Users().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveUsers(tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Users().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.AccountID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.AccountID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Account != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Account != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Account != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Account != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.Users) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Users[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Users[0] != &e {
-		t.Error("relationship to e should have been preserved")
 	}
 }
 
@@ -1181,7 +1009,7 @@ func testAccountsSelect(t *testing.T) {
 }
 
 var (
-	accountDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `DeletedAt`: `timestamp with time zone`, `Email`: `text`, `FirstName`: `text`, `ID`: `bigint`, `LastName`: `text`, `UpdatedAt`: `timestamp with time zone`}
+	accountDBTypes = map[string]string{`CreatedAt`: `timestamp with time zone`, `DeletedAt`: `timestamp with time zone`, `Email`: `text`, `FirstName`: `text`, `ID`: `integer`, `LastName`: `text`, `UpdatedAt`: `timestamp with time zone`}
 	_              = bytes.MinRead
 )
 

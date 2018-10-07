@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/model"
+	"github.com/daveearley/product/pkg/models"
 	r "github.com/daveearley/product/pkg/repository"
 )
 
@@ -15,21 +15,25 @@ func NewAccountService(ar r.AccountRepositoryI, ur r.UserRepositoryI) *AccountSe
 	return &AccountService{ur, ar}
 }
 
-func (s *AccountService) Find(id uint64) (*model.Account, error) {
+func (s *AccountService) Find(id int) (*models.Account, error) {
 	return s.ar.GetById(id)
 }
 
-func (s *AccountService) CreateAccount(request *request.CreateAccount) (*model.Account, error) {
-	account, err := s.ar.Store(&model.Account{
+func (s *AccountService) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
+	account, err := s.ar.Store(&models.Account{
 		Email: request.Email,
-		Users: []model.User{
-			{
-				Email:     request.Email,
-				FirstName: request.FirstName,
-				LastName:  request.LastName,
-				Password:  request.Password,
-			},
-		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.ur.Store(&models.User{
+		AccountID: account.ID,
+		Email:     request.Email,
+		FirstName: request.FirstName,
+		LastName:  request.LastName,
+		Password:  request.Password,
 	})
 
 	if err != nil {
@@ -39,6 +43,6 @@ func (s *AccountService) CreateAccount(request *request.CreateAccount) (*model.A
 	return account, err
 }
 
-func (s *AccountService) DeleteAccount(account *model.Account) error {
+func (s *AccountService) DeleteAccount(account *models.Account) error {
 	return nil
 }

@@ -5,9 +5,9 @@ import (
 	"strconv"
 )
 
-// Covert a string to an unsigned int
-func Str2Uint(str string) uint64 {
-	i, err := strconv.ParseUint(str, 10, 64)
+// Covert a string to an int
+func Str2int(str string) int {
+	i, err := strconv.Atoi(str)
 	if err == nil {
 		return i
 	}

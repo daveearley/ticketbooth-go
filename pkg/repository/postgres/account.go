@@ -1,30 +1,31 @@
 package repository
 
 import (
-	"github.com/daveearley/product/pkg/model"
 	"database/sql"
+	"github.com/daveearley/product/pkg/models"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type AccountRepository struct {
-	Db *sql.DB
+	db *sql.DB
 }
 
 func NewAccountRepository(conn *sql.DB) *AccountRepository {
 	return &AccountRepository{conn}
 }
 
-func (r *AccountRepository) GetById(id uint64) (*model.Account, error) {
-	ac := &model.Account{}
+func (r *AccountRepository) GetById(id int) (*models.Account, error) {
+	ac, err := models.FindAccount(r.db, id)
 
-	//if err := r.Db.Preload("Users").First(ac, id).Error; err != nil {
-	//	return nil, err
-	//}
+	if err != nil {
+		return nil, err
+	}
 
 	return ac, nil
 }
 
-func (r *AccountRepository) Store(a *model.Account) (*model.Account, error) {
-	if err := r.Db.Create(&a).Error; err != nil {
+func (r *AccountRepository) Store(a *models.Account) (*models.Account, error) {
+	if err := a.Insert(r.db, boil.Infer()); err != nil {
 		return nil, err
 	}
 

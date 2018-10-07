@@ -22,11 +22,11 @@ import (
 
 // Account is an object representing the database table.
 type Account struct {
-	ID        int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID        int         `boil:"id" json:"id" toml:"id" yaml:"id"`
 	CreatedAt null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
 	UpdatedAt null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	DeletedAt null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Email     null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	Email     string      `boil:"email" json:"email" toml:"email" yaml:"email"`
 	FirstName null.String `boil:"first_name" json:"first_name,omitempty" toml:"first_name" yaml:"first_name,omitempty"`
 	LastName  null.String `boil:"last_name" json:"last_name,omitempty" toml:"last_name" yaml:"last_name,omitempty"`
 
@@ -591,7 +591,7 @@ func (accountL) LoadUsers(e boil.Executor, singular bool, maybeAccount interface
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.ID) {
+				if a == obj.ID {
 					continue Outer
 				}
 			}
@@ -642,7 +642,7 @@ func (accountL) LoadUsers(e boil.Executor, singular bool, maybeAccount interface
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.AccountID) {
+			if local.ID == foreign.AccountID {
 				local.R.Users = append(local.R.Users, foreign)
 				if foreign.R == nil {
 					foreign.R = &userR{}
@@ -770,7 +770,7 @@ func (o *Account) AddUsers(exec boil.Executor, insert bool, related ...*User) er
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.AccountID, o.ID)
+			rel.AccountID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -791,7 +791,7 @@ func (o *Account) AddUsers(exec boil.Executor, insert bool, related ...*User) er
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.AccountID, o.ID)
+			rel.AccountID = o.ID
 		}
 	}
 
@@ -815,76 +815,6 @@ func (o *Account) AddUsers(exec boil.Executor, insert bool, related ...*User) er
 	return nil
 }
 
-// SetUsers removes all previously related items of the
-// account replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Account's Users accordingly.
-// Replaces o.R.Users with related.
-// Sets related.R.Account's Users accordingly.
-func (o *Account) SetUsers(exec boil.Executor, insert bool, related ...*User) error {
-	query := "update \"users\" set \"account_id\" = null where \"account_id\" = $1"
-	values := []interface{}{o.ID}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.Users {
-			queries.SetScanner(&rel.AccountID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Account = nil
-		}
-
-		o.R.Users = nil
-	}
-	return o.AddUsers(exec, insert, related...)
-}
-
-// RemoveUsers relationships from objects passed in.
-// Removes related items from R.Users (uses pointer comparison, removal does not keep order)
-// Sets related.R.Account.
-func (o *Account) RemoveUsers(exec boil.Executor, related ...*User) error {
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.AccountID, nil)
-		if rel.R != nil {
-			rel.R.Account = nil
-		}
-		if _, err = rel.Update(exec, boil.Whitelist("account_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.Users {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.Users)
-			if ln > 1 && i < ln-1 {
-				o.R.Users[i] = o.R.Users[ln-1]
-			}
-			o.R.Users = o.R.Users[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // Accounts retrieves all the records using an executor.
 func Accounts(mods ...qm.QueryMod) accountQuery {
 	mods = append(mods, qm.From("\"accounts\""))
@@ -893,7 +823,7 @@ func Accounts(mods ...qm.QueryMod) accountQuery {
 
 // FindAccount retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAccount(exec boil.Executor, iD int64, selectCols ...string) (*Account, error) {
+func FindAccount(exec boil.Executor, iD int, selectCols ...string) (*Account, error) {
 	accountObj := &Account{}
 
 	sel := "*"
@@ -1408,7 +1338,7 @@ func (o *AccountSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // AccountExists checks if the Account row exists.
-func AccountExists(exec boil.Executor, iD int64) (bool, error) {
+func AccountExists(exec boil.Executor, iD int) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"accounts\" where \"id\"=$1 limit 1)"
 

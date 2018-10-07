@@ -490,7 +490,7 @@ func testUserToOneAccountUsingAccount(t *testing.T) {
 	var foreign Account
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, userDBTypes, true, userColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, userDBTypes, false, userColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize User struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, accountDBTypes, false, accountColumnsWithDefault...); err != nil {
@@ -501,7 +501,7 @@ func testUserToOneAccountUsingAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.AccountID, foreign.ID)
+	local.AccountID = foreign.ID
 	if err := local.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +511,7 @@ func testUserToOneAccountUsingAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.ID, foreign.ID) {
+	if check.ID != foreign.ID {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -572,7 +572,7 @@ func testUserToOneSetOpAccountUsingAccount(t *testing.T) {
 		if x.R.Users[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.AccountID, x.ID) {
+		if a.AccountID != x.ID {
 			t.Error("foreign key was wrong value", a.AccountID)
 		}
 
@@ -583,59 +583,9 @@ func testUserToOneSetOpAccountUsingAccount(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.AccountID, x.ID) {
+		if a.AccountID != x.ID {
 			t.Error("foreign key was wrong value", a.AccountID, x.ID)
 		}
-	}
-}
-
-func testUserToOneRemoveOpAccountUsingAccount(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a User
-	var b Account
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetAccount(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveAccount(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Account().Count(tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Account != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.AccountID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Users) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -710,7 +660,7 @@ func testUsersSelect(t *testing.T) {
 }
 
 var (
-	userDBTypes = map[string]string{`AccountID`: `integer`, `CreatedAt`: `timestamp with time zone`, `DeletedAt`: `timestamp with time zone`, `Email`: `text`, `FirstName`: `text`, `ID`: `bigint`, `LastName`: `text`, `Password`: `text`, `Status`: `text`, `UpdatedAt`: `timestamp with time zone`}
+	userDBTypes = map[string]string{`AccountID`: `integer`, `CreatedAt`: `timestamp with time zone`, `DeletedAt`: `timestamp with time zone`, `Email`: `text`, `FirstName`: `text`, `ID`: `integer`, `LastName`: `text`, `Password`: `text`, `Status`: `text`, `UpdatedAt`: `timestamp with time zone`}
 	_           = bytes.MinRead
 )
 

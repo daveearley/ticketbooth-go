@@ -1393,57 +1393,6 @@ func testEventToManyAddOpTransactions(t *testing.T) {
 		}
 	}
 }
-func testEventToOneAccountUsingAccount(t *testing.T) {
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var local Event
-	var foreign Account
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, eventDBTypes, false, eventColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Event struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, accountDBTypes, false, accountColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Account struct: %s", err)
-	}
-
-	if err := foreign.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.AccountID = foreign.ID
-	if err := local.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Account().One(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := EventSlice{&local}
-	if err = local.L.LoadAccount(tx, false, (*[]*Event)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Account == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Account = nil
-	if err = local.L.LoadAccount(tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Account == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testEventToOneAccountUserUsingUser(t *testing.T) {
 
 	tx := MustTx(boil.Begin())
@@ -1495,62 +1444,57 @@ func testEventToOneAccountUserUsingUser(t *testing.T) {
 	}
 }
 
-func testEventToOneSetOpAccountUsingAccount(t *testing.T) {
-	var err error
+func testEventToOneAccountUsingAccount(t *testing.T) {
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
-	var a Event
-	var b, c Account
+	var local Event
+	var foreign Account
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, eventDBTypes, false, strmangle.SetComplement(eventPrimaryKeyColumns, eventColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, eventDBTypes, false, eventColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Event struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, accountDBTypes, false, accountColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Account struct: %s", err)
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Account{&b, &c} {
-		err = a.SetAccount(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
+	local.AccountID = foreign.ID
+	if err := local.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-		if a.R.Account != x {
-			t.Error("relationship struct not set to correct value")
-		}
+	check, err := local.Account().One(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if x.R.Events[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.AccountID != x.ID {
-			t.Error("foreign key was wrong value", a.AccountID)
-		}
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
 
-		zero := reflect.Zero(reflect.TypeOf(a.AccountID))
-		reflect.Indirect(reflect.ValueOf(&a.AccountID)).Set(zero)
+	slice := EventSlice{&local}
+	if err = local.L.LoadAccount(tx, false, (*[]*Event)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Account == nil {
+		t.Error("struct should have been eager loaded")
+	}
 
-		if err = a.Reload(tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.AccountID != x.ID {
-			t.Error("foreign key was wrong value", a.AccountID, x.ID)
-		}
+	local.R.Account = nil
+	if err = local.L.LoadAccount(tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Account == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
+
 func testEventToOneSetOpAccountUserUsingUser(t *testing.T) {
 	var err error
 
@@ -1604,6 +1548,62 @@ func testEventToOneSetOpAccountUserUsingUser(t *testing.T) {
 
 		if a.UserID != x.ID {
 			t.Error("foreign key was wrong value", a.UserID, x.ID)
+		}
+	}
+}
+func testEventToOneSetOpAccountUsingAccount(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Event
+	var b, c Account
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, eventDBTypes, false, strmangle.SetComplement(eventPrimaryKeyColumns, eventColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, accountDBTypes, false, strmangle.SetComplement(accountPrimaryKeyColumns, accountColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Account{&b, &c} {
+		err = a.SetAccount(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Account != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Events[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.AccountID != x.ID {
+			t.Error("foreign key was wrong value", a.AccountID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.AccountID))
+		reflect.Indirect(reflect.ValueOf(&a.AccountID)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.AccountID != x.ID {
+			t.Error("foreign key was wrong value", a.AccountID, x.ID)
 		}
 	}
 }

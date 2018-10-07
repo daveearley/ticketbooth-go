@@ -22,16 +22,16 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID        int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
-	DeletedAt null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Email     null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
-	Password  null.String `boil:"password" json:"password,omitempty" toml:"password" yaml:"password,omitempty"`
-	FirstName null.String `boil:"first_name" json:"first_name,omitempty" toml:"first_name" yaml:"first_name,omitempty"`
-	LastName  null.String `boil:"last_name" json:"last_name,omitempty" toml:"last_name" yaml:"last_name,omitempty"`
-	Status    null.String `boil:"status" json:"status,omitempty" toml:"status" yaml:"status,omitempty"`
-	AccountID null.Int    `boil:"account_id" json:"account_id,omitempty" toml:"account_id" yaml:"account_id,omitempty"`
+	ID        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt null.Time `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UpdatedAt null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	DeletedAt null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	Email     string    `boil:"email" json:"email" toml:"email" yaml:"email"`
+	Password  string    `boil:"password" json:"password" toml:"password" yaml:"password"`
+	FirstName string    `boil:"first_name" json:"first_name" toml:"first_name" yaml:"first_name"`
+	LastName  string    `boil:"last_name" json:"last_name" toml:"last_name" yaml:"last_name"`
+	Status    string    `boil:"status" json:"status" toml:"status" yaml:"status"`
+	AccountID int       `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -363,7 +363,7 @@ func (userL) LoadAccount(e boil.Executor, singular bool, maybeUser interface{}, 
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.AccountID) {
+				if a == obj.AccountID {
 					continue Outer
 				}
 			}
@@ -418,7 +418,7 @@ func (userL) LoadAccount(e boil.Executor, singular bool, maybeUser interface{}, 
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.AccountID, foreign.ID) {
+			if local.AccountID == foreign.ID {
 				local.R.Account = foreign
 				if foreign.R == nil {
 					foreign.R = &accountR{}
@@ -459,7 +459,7 @@ func (o *User) SetAccount(exec boil.Executor, insert bool, related *Account) err
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.AccountID, related.ID)
+	o.AccountID = related.ID
 	if o.R == nil {
 		o.R = &userR{
 			Account: related,
@@ -479,37 +479,6 @@ func (o *User) SetAccount(exec boil.Executor, insert bool, related *Account) err
 	return nil
 }
 
-// RemoveAccount relationship.
-// Sets o.R.Account to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *User) RemoveAccount(exec boil.Executor, related *Account) error {
-	var err error
-
-	queries.SetScanner(&o.AccountID, nil)
-	if _, err = o.Update(exec, boil.Whitelist("account_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.Account = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Users {
-		if queries.Equal(o.AccountID, ri.AccountID) {
-			continue
-		}
-
-		ln := len(related.R.Users)
-		if ln > 1 && i < ln-1 {
-			related.R.Users[i] = related.R.Users[ln-1]
-		}
-		related.R.Users = related.R.Users[:ln-1]
-		break
-	}
-	return nil
-}
-
 // Users retrieves all the records using an executor.
 func Users(mods ...qm.QueryMod) userQuery {
 	mods = append(mods, qm.From("\"users\""))
@@ -518,7 +487,7 @@ func Users(mods ...qm.QueryMod) userQuery {
 
 // FindUser retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindUser(exec boil.Executor, iD int64, selectCols ...string) (*User, error) {
+func FindUser(exec boil.Executor, iD int, selectCols ...string) (*User, error) {
 	userObj := &User{}
 
 	sel := "*"
@@ -1033,7 +1002,7 @@ func (o *UserSlice) ReloadAll(exec boil.Executor) error {
 }
 
 // UserExists checks if the User row exists.
-func UserExists(exec boil.Executor, iD int64) (bool, error) {
+func UserExists(exec boil.Executor, iD int) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"users\" where \"id\"=$1 limit 1)"
 

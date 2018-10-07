@@ -1,13 +1,13 @@
 package repository
 
-import "github.com/daveearley/product/pkg/model"
+import "github.com/daveearley/product/pkg/models"
 
 type AccountRepositoryI interface {
-	GetById(id uint64) (*model.Account, error)
-	Store(a *model.Account) (*model.Account, error)
+	GetById(id int) (*models.Account, error)
+	Store(a *models.Account) (*models.Account, error)
 }
 
 type UserRepositoryI interface {
-	GetById(id uint64) (*model.User, error)
-	Store(a *model.User) (*model.User, error)
+	GetById(id int) (*models.User, error)
+	Store(a *models.User) (*models.User, error)
 }

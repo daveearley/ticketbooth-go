@@ -1,10 +1,10 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/daveearley/product/pkg/utils"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"database/sql"
 )
 
 const (
