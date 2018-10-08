@@ -559,14 +559,14 @@ func testTransactionToManyCustomers(t *testing.T) {
 	}
 }
 
-func testTransactionToManyTransactionAttributes(t *testing.T) {
+func testTransactionToManyAttributes(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
 	var a Transaction
-	var b, c TransactionAttribute
+	var b, c Attribute
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
@@ -577,15 +577,12 @@ func testTransactionToManyTransactionAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, transactionAttributeDBTypes, false, transactionAttributeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, attributeDBTypes, false, attributeColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, transactionAttributeDBTypes, false, transactionAttributeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, attributeDBTypes, false, attributeColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-
-	b.TransactionID = a.ID
-	c.TransactionID = a.ID
 
 	if err = b.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
@@ -594,17 +591,26 @@ func testTransactionToManyTransactionAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	transactionAttribute, err := a.TransactionAttributes().All(tx)
+	_, err = tx.Exec("insert into \"transaction_attributes\" (\"transaction_id\", \"attribute_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"transaction_attributes\" (\"transaction_id\", \"attribute_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	attribute, err := a.Attributes().All(tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range transactionAttribute {
-		if v.TransactionID == b.TransactionID {
+	for _, v := range attribute {
+		if v.ID == b.ID {
 			bFound = true
 		}
-		if v.TransactionID == c.TransactionID {
+		if v.ID == c.ID {
 			cFound = true
 		}
 	}
@@ -617,23 +623,23 @@ func testTransactionToManyTransactionAttributes(t *testing.T) {
 	}
 
 	slice := TransactionSlice{&a}
-	if err = a.L.LoadTransactionAttributes(tx, false, (*[]*Transaction)(&slice), nil); err != nil {
+	if err = a.L.LoadAttributes(tx, false, (*[]*Transaction)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TransactionAttributes); got != 2 {
+	if got := len(a.R.Attributes); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.TransactionAttributes = nil
-	if err = a.L.LoadTransactionAttributes(tx, true, &a, nil); err != nil {
+	a.R.Attributes = nil
+	if err = a.L.LoadAttributes(tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TransactionAttributes); got != 2 {
+	if got := len(a.R.Attributes); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", transactionAttribute)
+		t.Logf("%#v", attribute)
 	}
 }
 
@@ -867,22 +873,22 @@ func testTransactionToManyAddOpCustomers(t *testing.T) {
 		}
 	}
 }
-func testTransactionToManyAddOpTransactionAttributes(t *testing.T) {
+func testTransactionToManyAddOpAttributes(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
 	var a Transaction
-	var b, c, d, e TransactionAttribute
+	var b, c, d, e Attribute
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*TransactionAttribute{&b, &c, &d, &e}
+	foreigners := []*Attribute{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, transactionAttributeDBTypes, false, strmangle.SetComplement(transactionAttributePrimaryKeyColumns, transactionAttributeColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -897,13 +903,13 @@ func testTransactionToManyAddOpTransactionAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*TransactionAttribute{
+	foreignersSplitByInsertion := [][]*Attribute{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddTransactionAttributes(tx, i != 0, x...)
+		err = a.AddAttributes(tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -911,28 +917,21 @@ func testTransactionToManyAddOpTransactionAttributes(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
+		if first.R.Transactions[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
-		if a.ID != second.TransactionID {
-			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
-		}
-
-		if first.R.Transaction != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Transaction != &a {
-			t.Error("relationship was not added properly to the foreign slice")
+		if second.R.Transactions[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
 
-		if a.R.TransactionAttributes[i*2] != first {
+		if a.R.Attributes[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.TransactionAttributes[i*2+1] != second {
+		if a.R.Attributes[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.TransactionAttributes().Count(tx)
+		count, err := a.Attributes().Count(tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -941,6 +940,164 @@ func testTransactionToManyAddOpTransactionAttributes(t *testing.T) {
 		}
 	}
 }
+
+func testTransactionToManySetOpAttributes(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Transaction
+	var b, c, d, e Attribute
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Attribute{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetAttributes(tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetAttributes(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Transactions) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Transactions) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Transactions[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Transactions[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.Attributes[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Attributes[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testTransactionToManyRemoveOpAttributes(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Transaction
+	var b, c, d, e Attribute
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Attribute{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddAttributes(tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveAttributes(tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Transactions) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Transactions) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Transactions[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Transactions[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.Attributes) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Attributes[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Attributes[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testTransactionToManyAddOpTransactionDiscountCodes(t *testing.T) {
 	var err error
 

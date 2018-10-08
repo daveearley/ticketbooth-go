@@ -63,14 +63,14 @@ var TransactionRels = struct {
 	Event                    string
 	Customer                 string
 	Customers                string
-	TransactionAttributes    string
+	Attributes               string
 	TransactionDiscountCodes string
 	TransactionItems         string
 }{
 	Event:                    "Event",
 	Customer:                 "Customer",
 	Customers:                "Customers",
-	TransactionAttributes:    "TransactionAttributes",
+	Attributes:               "Attributes",
 	TransactionDiscountCodes: "TransactionDiscountCodes",
 	TransactionItems:         "TransactionItems",
 }
@@ -80,7 +80,7 @@ type transactionR struct {
 	Event                    *Event
 	Customer                 *Customer
 	Customers                CustomerSlice
-	TransactionAttributes    TransactionAttributeSlice
+	Attributes               AttributeSlice
 	TransactionDiscountCodes TransactionDiscountCodeSlice
 	TransactionItems         TransactionItemSlice
 }
@@ -384,22 +384,23 @@ func (o *Transaction) Customers(mods ...qm.QueryMod) customerQuery {
 	return query
 }
 
-// TransactionAttributes retrieves all the transaction_attribute's TransactionAttributes with an executor.
-func (o *Transaction) TransactionAttributes(mods ...qm.QueryMod) transactionAttributeQuery {
+// Attributes retrieves all the attribute's Attributes with an executor.
+func (o *Transaction) Attributes(mods ...qm.QueryMod) attributeQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
+		qm.InnerJoin("\"transaction_attributes\" on \"attributes\".\"id\" = \"transaction_attributes\".\"attribute_id\""),
 		qm.Where("\"transaction_attributes\".\"transaction_id\"=?", o.ID),
 	)
 
-	query := TransactionAttributes(queryMods...)
-	queries.SetFrom(query.Query, "\"transaction_attributes\"")
+	query := Attributes(queryMods...)
+	queries.SetFrom(query.Query, "\"attributes\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"transaction_attributes\".*"})
+		queries.SetSelect(query.Query, []string{"\"attributes\".*"})
 	}
 
 	return query
@@ -728,9 +729,9 @@ func (transactionL) LoadCustomers(e boil.Executor, singular bool, maybeTransacti
 	return nil
 }
 
-// LoadTransactionAttributes allows an eager lookup of values, cached into the
+// LoadAttributes allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (transactionL) LoadTransactionAttributes(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
+func (transactionL) LoadAttributes(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
@@ -763,29 +764,48 @@ func (transactionL) LoadTransactionAttributes(e boil.Executor, singular bool, ma
 		}
 	}
 
-	query := NewQuery(qm.From(`transaction_attributes`), qm.WhereIn(`transaction_id in ?`, args...))
+	query := NewQuery(
+		qm.Select("\"attributes\".*, \"a\".\"transaction_id\""),
+		qm.From("\"attributes\""),
+		qm.InnerJoin("\"transaction_attributes\" as \"a\" on \"attributes\".\"id\" = \"a\".\"attribute_id\""),
+		qm.WhereIn("\"a\".\"transaction_id\" in ?", args...),
+	)
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.Query(e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load transaction_attributes")
+		return errors.Wrap(err, "failed to eager load attributes")
 	}
 
-	var resultSlice []*TransactionAttribute
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice transaction_attributes")
+	var resultSlice []*Attribute
+
+	var localJoinCols []int
+	for results.Next() {
+		one := new(Attribute)
+		var localJoinCol int
+
+		err = results.Scan(&one.ID, &one.Name, &one.Value, &one.Type, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &localJoinCol)
+		if err != nil {
+			return errors.Wrap(err, "failed to scan eager loaded results for attributes")
+		}
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice attributes")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on transaction_attributes")
+		return errors.Wrap(err, "failed to close results in eager load on attributes")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transaction_attributes")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for attributes")
 	}
 
-	if len(transactionAttributeAfterSelectHooks) != 0 {
+	if len(attributeAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(e); err != nil {
 				return err
@@ -793,24 +813,25 @@ func (transactionL) LoadTransactionAttributes(e boil.Executor, singular bool, ma
 		}
 	}
 	if singular {
-		object.R.TransactionAttributes = resultSlice
+		object.R.Attributes = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &transactionAttributeR{}
+				foreign.R = &attributeR{}
 			}
-			foreign.R.Transaction = object
+			foreign.R.Transactions = append(foreign.R.Transactions, object)
 		}
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
 		for _, local := range slice {
-			if local.ID == foreign.TransactionID {
-				local.R.TransactionAttributes = append(local.R.TransactionAttributes, foreign)
+			if local.ID == localJoinCol {
+				local.R.Attributes = append(local.R.Attributes, foreign)
 				if foreign.R == nil {
-					foreign.R = &transactionAttributeR{}
+					foreign.R = &attributeR{}
 				}
-				foreign.R.Transaction = local
+				foreign.R.Transactions = append(foreign.R.Transactions, local)
 				break
 			}
 		}
@@ -1148,57 +1169,144 @@ func (o *Transaction) AddCustomers(exec boil.Executor, insert bool, related ...*
 	return nil
 }
 
-// AddTransactionAttributes adds the given related objects to the existing relationships
+// AddAttributes adds the given related objects to the existing relationships
 // of the transaction, optionally inserting them as new records.
-// Appends related to o.R.TransactionAttributes.
-// Sets related.R.Transaction appropriately.
-func (o *Transaction) AddTransactionAttributes(exec boil.Executor, insert bool, related ...*TransactionAttribute) error {
+// Appends related to o.R.Attributes.
+// Sets related.R.Transactions appropriately.
+func (o *Transaction) AddAttributes(exec boil.Executor, insert bool, related ...*Attribute) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TransactionID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"transaction_attributes\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"transaction_id"}),
-				strmangle.WhereClause("\"", "\"", 2, transactionAttributePrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.TransactionID = o.ID
 		}
 	}
 
+	for _, rel := range related {
+		query := "insert into \"transaction_attributes\" (\"transaction_id\", \"attribute_id\") values ($1, $2)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.Exec(query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
 	if o.R == nil {
 		o.R = &transactionR{
-			TransactionAttributes: related,
+			Attributes: related,
 		}
 	} else {
-		o.R.TransactionAttributes = append(o.R.TransactionAttributes, related...)
+		o.R.Attributes = append(o.R.Attributes, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &transactionAttributeR{
-				Transaction: o,
+			rel.R = &attributeR{
+				Transactions: TransactionSlice{o},
 			}
 		} else {
-			rel.R.Transaction = o
+			rel.R.Transactions = append(rel.R.Transactions, o)
 		}
 	}
 	return nil
+}
+
+// SetAttributes removes all previously related items of the
+// transaction replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Transactions's Attributes accordingly.
+// Replaces o.R.Attributes with related.
+// Sets related.R.Transactions's Attributes accordingly.
+func (o *Transaction) SetAttributes(exec boil.Executor, insert bool, related ...*Attribute) error {
+	query := "delete from \"transaction_attributes\" where \"transaction_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeAttributesFromTransactionsSlice(o, related)
+	if o.R != nil {
+		o.R.Attributes = nil
+	}
+	return o.AddAttributes(exec, insert, related...)
+}
+
+// RemoveAttributes relationships from objects passed in.
+// Removes related items from R.Attributes (uses pointer comparison, removal does not keep order)
+// Sets related.R.Transactions.
+func (o *Transaction) RemoveAttributes(exec boil.Executor, related ...*Attribute) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from \"transaction_attributes\" where \"transaction_id\" = $1 and \"attribute_id\" in (%s)",
+		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeAttributesFromTransactionsSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Attributes {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Attributes)
+			if ln > 1 && i < ln-1 {
+				o.R.Attributes[i] = o.R.Attributes[ln-1]
+			}
+			o.R.Attributes = o.R.Attributes[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeAttributesFromTransactionsSlice(o *Transaction, related []*Attribute) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.Transactions {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.Transactions)
+			if ln > 1 && i < ln-1 {
+				rel.R.Transactions[i] = rel.R.Transactions[ln-1]
+			}
+			rel.R.Transactions = rel.R.Transactions[:ln-1]
+			break
+		}
+	}
 }
 
 // AddTransactionDiscountCodes adds the given related objects to the existing relationships

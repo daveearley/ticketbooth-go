@@ -29,7 +29,9 @@ func (r *EventRepository) Store(event *models.Event) (*models.Event, error) {
 		return nil, err
 	}
 
-	event.AddEventAttributes(r.db)
-
 	return event, nil
+}
+
+func (r *EventRepository) SetAttributes(event *models.Event, attr []*models.Attribute) error {
+	return event.SetAttributes(r.db, true, attr...)
 }

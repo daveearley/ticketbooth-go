@@ -15,4 +15,5 @@ type UserRepositoryI interface {
 type EventRepositoryI interface {
 	GetById(id int) (*models.Event, error)
 	Store(event *models.Event) (*models.Event, error)
+	SetAttributes(event *models.Event, attr []*models.Attribute) error
 }

@@ -18,10 +18,6 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("DiscountCodes", testDiscountCodesUpsert)
 
-	t.Run("EventAttributes", testEventAttributesUpsert)
-
-	t.Run("EventQuestions", testEventQuestionsUpsert)
-
 	t.Run("Events", testEventsUpsert)
 
 	t.Run("QuestionAnswers", testQuestionAnswersUpsert)
@@ -30,11 +26,7 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("TicketAttributes", testTicketAttributesUpsert)
 
-	t.Run("TicketQuestions", testTicketQuestionsUpsert)
-
 	t.Run("Tickets", testTicketsUpsert)
-
-	t.Run("TransactionAttributes", testTransactionAttributesUpsert)
 
 	t.Run("TransactionDiscountCodes", testTransactionDiscountCodesUpsert)
 

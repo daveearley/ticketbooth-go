@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/daveearley/product/pkg/api/request"
 	"github.com/daveearley/product/pkg/models/generated"
 	"github.com/daveearley/product/pkg/repository"
@@ -37,6 +38,24 @@ func (s *EventService) CreateEvent(req request.CreateEvent) (*models.Event, erro
 
 	if err != nil {
 		return nil, err
+	}
+
+	// todo Move attributes mapping to utils. Also handle conversion of map to json string
+	if req.Attributes != nil {
+		var attrs []*models.Attribute
+		for k, v := range req.Attributes {
+
+			//if reflect.TypeOf(v).Kind().String() == "map" {
+			//	v, _ := json.Marshal(v)
+			//}
+
+			attrs = append(attrs, &models.Attribute{
+				Name:  k,
+				Value: fmt.Sprint(v),
+			})
+		}
+
+		s.er.SetAttributes(event, attrs)
 	}
 
 	return event, nil

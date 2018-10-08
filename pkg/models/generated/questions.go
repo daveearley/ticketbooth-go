@@ -50,20 +50,20 @@ var QuestionColumns = struct {
 
 // QuestionRels is where relationship names are stored.
 var QuestionRels = struct {
-	EventQuestions  string
+	Events          string
 	QuestionAnswers string
-	TicketQuestions string
+	Tickets         string
 }{
-	EventQuestions:  "EventQuestions",
+	Events:          "Events",
 	QuestionAnswers: "QuestionAnswers",
-	TicketQuestions: "TicketQuestions",
+	Tickets:         "Tickets",
 }
 
 // questionR is where relationships are stored.
 type questionR struct {
-	EventQuestions  EventQuestionSlice
+	Events          EventSlice
 	QuestionAnswers QuestionAnswerSlice
-	TicketQuestions TicketQuestionSlice
+	Tickets         TicketSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -316,22 +316,23 @@ func (q questionQuery) Exists(exec boil.Executor) (bool, error) {
 	return count > 0, nil
 }
 
-// EventQuestions retrieves all the event_question's EventQuestions with an executor.
-func (o *Question) EventQuestions(mods ...qm.QueryMod) eventQuestionQuery {
+// Events retrieves all the event's Events with an executor.
+func (o *Question) Events(mods ...qm.QueryMod) eventQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
+		qm.InnerJoin("\"event_questions\" on \"events\".\"id\" = \"event_questions\".\"event_id\""),
 		qm.Where("\"event_questions\".\"question_id\"=?", o.ID),
 	)
 
-	query := EventQuestions(queryMods...)
-	queries.SetFrom(query.Query, "\"event_questions\"")
+	query := Events(queryMods...)
+	queries.SetFrom(query.Query, "\"events\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"event_questions\".*"})
+		queries.SetSelect(query.Query, []string{"\"events\".*"})
 	}
 
 	return query
@@ -358,30 +359,31 @@ func (o *Question) QuestionAnswers(mods ...qm.QueryMod) questionAnswerQuery {
 	return query
 }
 
-// TicketQuestions retrieves all the ticket_question's TicketQuestions with an executor.
-func (o *Question) TicketQuestions(mods ...qm.QueryMod) ticketQuestionQuery {
+// Tickets retrieves all the ticket's Tickets with an executor.
+func (o *Question) Tickets(mods ...qm.QueryMod) ticketQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
+		qm.InnerJoin("\"ticket_questions\" on \"tickets\".\"id\" = \"ticket_questions\".\"ticket_id\""),
 		qm.Where("\"ticket_questions\".\"question_id\"=?", o.ID),
 	)
 
-	query := TicketQuestions(queryMods...)
-	queries.SetFrom(query.Query, "\"ticket_questions\"")
+	query := Tickets(queryMods...)
+	queries.SetFrom(query.Query, "\"tickets\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"ticket_questions\".*"})
+		queries.SetSelect(query.Query, []string{"\"tickets\".*"})
 	}
 
 	return query
 }
 
-// LoadEventQuestions allows an eager lookup of values, cached into the
+// LoadEvents allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (questionL) LoadEventQuestions(e boil.Executor, singular bool, maybeQuestion interface{}, mods queries.Applicator) error {
+func (questionL) LoadEvents(e boil.Executor, singular bool, maybeQuestion interface{}, mods queries.Applicator) error {
 	var slice []*Question
 	var object *Question
 
@@ -414,29 +416,48 @@ func (questionL) LoadEventQuestions(e boil.Executor, singular bool, maybeQuestio
 		}
 	}
 
-	query := NewQuery(qm.From(`event_questions`), qm.WhereIn(`question_id in ?`, args...))
+	query := NewQuery(
+		qm.Select("\"events\".*, \"a\".\"question_id\""),
+		qm.From("\"events\""),
+		qm.InnerJoin("\"event_questions\" as \"a\" on \"events\".\"id\" = \"a\".\"event_id\""),
+		qm.WhereIn("\"a\".\"question_id\" in ?", args...),
+	)
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.Query(e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load event_questions")
+		return errors.Wrap(err, "failed to eager load events")
 	}
 
-	var resultSlice []*EventQuestion
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice event_questions")
+	var resultSlice []*Event
+
+	var localJoinCols []int
+	for results.Next() {
+		one := new(Event)
+		var localJoinCol int
+
+		err = results.Scan(&one.ID, &one.Title, &one.AccountID, &one.UserID, &one.Status, &one.StartDate, &one.EndDate, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.Description, &localJoinCol)
+		if err != nil {
+			return errors.Wrap(err, "failed to scan eager loaded results for events")
+		}
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice events")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on event_questions")
+		return errors.Wrap(err, "failed to close results in eager load on events")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for event_questions")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for events")
 	}
 
-	if len(eventQuestionAfterSelectHooks) != 0 {
+	if len(eventAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(e); err != nil {
 				return err
@@ -444,24 +465,25 @@ func (questionL) LoadEventQuestions(e boil.Executor, singular bool, maybeQuestio
 		}
 	}
 	if singular {
-		object.R.EventQuestions = resultSlice
+		object.R.Events = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &eventQuestionR{}
+				foreign.R = &eventR{}
 			}
-			foreign.R.Question = object
+			foreign.R.Questions = append(foreign.R.Questions, object)
 		}
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
 		for _, local := range slice {
-			if local.ID == foreign.QuestionID {
-				local.R.EventQuestions = append(local.R.EventQuestions, foreign)
+			if local.ID == localJoinCol {
+				local.R.Events = append(local.R.Events, foreign)
 				if foreign.R == nil {
-					foreign.R = &eventQuestionR{}
+					foreign.R = &eventR{}
 				}
-				foreign.R.Question = local
+				foreign.R.Questions = append(foreign.R.Questions, local)
 				break
 			}
 		}
@@ -561,9 +583,9 @@ func (questionL) LoadQuestionAnswers(e boil.Executor, singular bool, maybeQuesti
 	return nil
 }
 
-// LoadTicketQuestions allows an eager lookup of values, cached into the
+// LoadTickets allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (questionL) LoadTicketQuestions(e boil.Executor, singular bool, maybeQuestion interface{}, mods queries.Applicator) error {
+func (questionL) LoadTickets(e boil.Executor, singular bool, maybeQuestion interface{}, mods queries.Applicator) error {
 	var slice []*Question
 	var object *Question
 
@@ -596,29 +618,48 @@ func (questionL) LoadTicketQuestions(e boil.Executor, singular bool, maybeQuesti
 		}
 	}
 
-	query := NewQuery(qm.From(`ticket_questions`), qm.WhereIn(`question_id in ?`, args...))
+	query := NewQuery(
+		qm.Select("\"tickets\".*, \"a\".\"question_id\""),
+		qm.From("\"tickets\""),
+		qm.InnerJoin("\"ticket_questions\" as \"a\" on \"tickets\".\"id\" = \"a\".\"ticket_id\""),
+		qm.WhereIn("\"a\".\"question_id\" in ?", args...),
+	)
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.Query(e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load ticket_questions")
+		return errors.Wrap(err, "failed to eager load tickets")
 	}
 
-	var resultSlice []*TicketQuestion
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice ticket_questions")
+	var resultSlice []*Ticket
+
+	var localJoinCols []int
+	for results.Next() {
+		one := new(Ticket)
+		var localJoinCol int
+
+		err = results.Scan(&one.ID, &one.Title, &one.EventID, &one.IntitalQuantityAvailable, &one.QuantitySold, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &localJoinCol)
+		if err != nil {
+			return errors.Wrap(err, "failed to scan eager loaded results for tickets")
+		}
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice tickets")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on ticket_questions")
+		return errors.Wrap(err, "failed to close results in eager load on tickets")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ticket_questions")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for tickets")
 	}
 
-	if len(ticketQuestionAfterSelectHooks) != 0 {
+	if len(ticketAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(e); err != nil {
 				return err
@@ -626,24 +667,25 @@ func (questionL) LoadTicketQuestions(e boil.Executor, singular bool, maybeQuesti
 		}
 	}
 	if singular {
-		object.R.TicketQuestions = resultSlice
+		object.R.Tickets = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &ticketQuestionR{}
+				foreign.R = &ticketR{}
 			}
-			foreign.R.Question = object
+			foreign.R.Questions = append(foreign.R.Questions, object)
 		}
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
 		for _, local := range slice {
-			if local.ID == foreign.QuestionID {
-				local.R.TicketQuestions = append(local.R.TicketQuestions, foreign)
+			if local.ID == localJoinCol {
+				local.R.Tickets = append(local.R.Tickets, foreign)
 				if foreign.R == nil {
-					foreign.R = &ticketQuestionR{}
+					foreign.R = &ticketR{}
 				}
-				foreign.R.Question = local
+				foreign.R.Questions = append(foreign.R.Questions, local)
 				break
 			}
 		}
@@ -652,57 +694,144 @@ func (questionL) LoadTicketQuestions(e boil.Executor, singular bool, maybeQuesti
 	return nil
 }
 
-// AddEventQuestions adds the given related objects to the existing relationships
+// AddEvents adds the given related objects to the existing relationships
 // of the question, optionally inserting them as new records.
-// Appends related to o.R.EventQuestions.
-// Sets related.R.Question appropriately.
-func (o *Question) AddEventQuestions(exec boil.Executor, insert bool, related ...*EventQuestion) error {
+// Appends related to o.R.Events.
+// Sets related.R.Questions appropriately.
+func (o *Question) AddEvents(exec boil.Executor, insert bool, related ...*Event) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.QuestionID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"event_questions\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"question_id"}),
-				strmangle.WhereClause("\"", "\"", 2, eventQuestionPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.QuestionID = o.ID
 		}
 	}
 
+	for _, rel := range related {
+		query := "insert into \"event_questions\" (\"question_id\", \"event_id\") values ($1, $2)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.Exec(query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
 	if o.R == nil {
 		o.R = &questionR{
-			EventQuestions: related,
+			Events: related,
 		}
 	} else {
-		o.R.EventQuestions = append(o.R.EventQuestions, related...)
+		o.R.Events = append(o.R.Events, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &eventQuestionR{
-				Question: o,
+			rel.R = &eventR{
+				Questions: QuestionSlice{o},
 			}
 		} else {
-			rel.R.Question = o
+			rel.R.Questions = append(rel.R.Questions, o)
 		}
 	}
 	return nil
+}
+
+// SetEvents removes all previously related items of the
+// question replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Questions's Events accordingly.
+// Replaces o.R.Events with related.
+// Sets related.R.Questions's Events accordingly.
+func (o *Question) SetEvents(exec boil.Executor, insert bool, related ...*Event) error {
+	query := "delete from \"event_questions\" where \"question_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeEventsFromQuestionsSlice(o, related)
+	if o.R != nil {
+		o.R.Events = nil
+	}
+	return o.AddEvents(exec, insert, related...)
+}
+
+// RemoveEvents relationships from objects passed in.
+// Removes related items from R.Events (uses pointer comparison, removal does not keep order)
+// Sets related.R.Questions.
+func (o *Question) RemoveEvents(exec boil.Executor, related ...*Event) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from \"event_questions\" where \"question_id\" = $1 and \"event_id\" in (%s)",
+		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeEventsFromQuestionsSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Events {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Events)
+			if ln > 1 && i < ln-1 {
+				o.R.Events[i] = o.R.Events[ln-1]
+			}
+			o.R.Events = o.R.Events[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeEventsFromQuestionsSlice(o *Question, related []*Event) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.Questions {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.Questions)
+			if ln > 1 && i < ln-1 {
+				rel.R.Questions[i] = rel.R.Questions[ln-1]
+			}
+			rel.R.Questions = rel.R.Questions[:ln-1]
+			break
+		}
+	}
 }
 
 // AddQuestionAnswers adds the given related objects to the existing relationships
@@ -758,57 +887,144 @@ func (o *Question) AddQuestionAnswers(exec boil.Executor, insert bool, related .
 	return nil
 }
 
-// AddTicketQuestions adds the given related objects to the existing relationships
+// AddTickets adds the given related objects to the existing relationships
 // of the question, optionally inserting them as new records.
-// Appends related to o.R.TicketQuestions.
-// Sets related.R.Question appropriately.
-func (o *Question) AddTicketQuestions(exec boil.Executor, insert bool, related ...*TicketQuestion) error {
+// Appends related to o.R.Tickets.
+// Sets related.R.Questions appropriately.
+func (o *Question) AddTickets(exec boil.Executor, insert bool, related ...*Ticket) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.QuestionID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"ticket_questions\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"question_id"}),
-				strmangle.WhereClause("\"", "\"", 2, ticketQuestionPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.QuestionID = o.ID
 		}
 	}
 
+	for _, rel := range related {
+		query := "insert into \"ticket_questions\" (\"question_id\", \"ticket_id\") values ($1, $2)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.Exec(query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
 	if o.R == nil {
 		o.R = &questionR{
-			TicketQuestions: related,
+			Tickets: related,
 		}
 	} else {
-		o.R.TicketQuestions = append(o.R.TicketQuestions, related...)
+		o.R.Tickets = append(o.R.Tickets, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &ticketQuestionR{
-				Question: o,
+			rel.R = &ticketR{
+				Questions: QuestionSlice{o},
 			}
 		} else {
-			rel.R.Question = o
+			rel.R.Questions = append(rel.R.Questions, o)
 		}
 	}
 	return nil
+}
+
+// SetTickets removes all previously related items of the
+// question replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Questions's Tickets accordingly.
+// Replaces o.R.Tickets with related.
+// Sets related.R.Questions's Tickets accordingly.
+func (o *Question) SetTickets(exec boil.Executor, insert bool, related ...*Ticket) error {
+	query := "delete from \"ticket_questions\" where \"question_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeTicketsFromQuestionsSlice(o, related)
+	if o.R != nil {
+		o.R.Tickets = nil
+	}
+	return o.AddTickets(exec, insert, related...)
+}
+
+// RemoveTickets relationships from objects passed in.
+// Removes related items from R.Tickets (uses pointer comparison, removal does not keep order)
+// Sets related.R.Questions.
+func (o *Question) RemoveTickets(exec boil.Executor, related ...*Ticket) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from \"ticket_questions\" where \"question_id\" = $1 and \"ticket_id\" in (%s)",
+		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeTicketsFromQuestionsSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Tickets {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Tickets)
+			if ln > 1 && i < ln-1 {
+				o.R.Tickets[i] = o.R.Tickets[ln-1]
+			}
+			o.R.Tickets = o.R.Tickets[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeTicketsFromQuestionsSlice(o *Question, related []*Ticket) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.Questions {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.Questions)
+			if ln > 1 && i < ln-1 {
+				rel.R.Questions[i] = rel.R.Questions[ln-1]
+			}
+			rel.R.Questions = rel.R.Questions[:ln-1]
+			break
+		}
+	}
 }
 
 // Questions retrieves all the records using an executor.
