@@ -1,25 +1,40 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/daveearley/product/pkg/models/generated"
+	"reflect"
 )
 
 // This maps a map[string]interface{} to Attribute models
-// todo Move attributes mapping to utils. Also handle conversion of map to json string
 func MapToAttributes(attributes *map[string]interface{}) []*models.Attribute {
 	var attrs []*models.Attribute
 	for k, v := range *attributes {
-
-		//if reflect.TypeOf(v).Kind().String() == "map" {
-		//	v, _ := json.Marshal(v)
-		//}
-
+		v, t := valueToStringAndType(v)
 		attrs = append(attrs, &models.Attribute{
 			Name:  k,
-			Value: fmt.Sprint(v),
+			Value: v,
+			Type:  t,
 		})
 	}
 
 	return attrs
+}
+
+// Casts value to string and returns the string + values type
+func valueToStringAndType(v interface{}) (string, string) {
+	// Null values result in a panic so cast them to false
+	if v == nil {
+		return "false", "bool"
+	}
+
+	varType := reflect.TypeOf(v).Kind().String()
+
+	if varType == "map" {
+		v, _ := json.Marshal(v)
+		return string(v), "json"
+	}
+
+	return fmt.Sprint(v), varType
 }

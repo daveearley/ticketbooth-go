@@ -6,15 +6,15 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-type EventRepository struct {
+type eventRepository struct {
 	db *sql.DB
 }
 
-func NewEventRepository(db *sql.DB) *EventRepository {
-	return &EventRepository{db}
+func NewEventRepository(db *sql.DB) *eventRepository {
+	return &eventRepository{db}
 }
 
-func (r *EventRepository) GetById(id int) (*models.Event, error) {
+func (r *eventRepository) GetById(id int) (*models.Event, error) {
 	event, err := models.FindEvent(r.db, id)
 
 	if err != nil {
@@ -24,7 +24,7 @@ func (r *EventRepository) GetById(id int) (*models.Event, error) {
 	return event, nil
 }
 
-func (r *EventRepository) Store(event *models.Event) (*models.Event, error) {
+func (r *eventRepository) Store(event *models.Event) (*models.Event, error) {
 	if err := event.Insert(r.db, boil.Infer()); err != nil {
 		return nil, err
 	}
@@ -32,6 +32,6 @@ func (r *EventRepository) Store(event *models.Event) (*models.Event, error) {
 	return event, nil
 }
 
-func (r *EventRepository) SetAttributes(event *models.Event, attr []*models.Attribute) error {
+func (r *eventRepository) SetAttributes(event *models.Event, attr []*models.Attribute) error {
 	return event.SetAttributes(r.db, true, attr...)
 }

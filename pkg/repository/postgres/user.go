@@ -6,15 +6,15 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-type UserRepository struct {
+type userRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(conn *sql.DB) *UserRepository {
-	return &UserRepository{conn}
+func NewUserRepository(conn *sql.DB) *userRepository {
+	return &userRepository{conn}
 }
 
-func (r *UserRepository) GetById(id int) (*models.User, error) {
+func (r *userRepository) GetById(id int) (*models.User, error) {
 	user, err := models.FindUser(r.db, id)
 
 	if err != nil {
@@ -24,7 +24,7 @@ func (r *UserRepository) GetById(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) Store(a *models.User) (*models.User, error) {
+func (r *userRepository) Store(a *models.User) (*models.User, error) {
 	if err := a.Insert(r.db, boil.Infer()); err != nil {
 		return a, err
 	}

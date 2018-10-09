@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -22,13 +21,13 @@ import (
 
 // Attribute is an object representing the database table.
 type Attribute struct {
-	ID        int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name      string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Value     string      `boil:"value" json:"value" toml:"value" yaml:"value"`
-	Type      null.String `boil:"type" json:"type,omitempty" toml:"type" yaml:"type,omitempty"`
-	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	ID        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Value     string    `boil:"value" json:"value" toml:"value" yaml:"value"`
+	Type      string    `boil:"type" json:"type" toml:"type" yaml:"type"`
+	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *attributeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L attributeL  `boil:"-" json:"-" toml:"-" yaml:"-"`

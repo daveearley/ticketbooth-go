@@ -6,20 +6,20 @@ import (
 	r "github.com/daveearley/product/pkg/repository"
 )
 
-type AccountService struct {
-	ur r.UserRepositoryI
-	ar r.AccountRepositoryI
+type accountService struct {
+	ur r.UserRepository
+	ar r.AccountRepository
 }
 
-func NewAccountService(ar r.AccountRepositoryI, ur r.UserRepositoryI) *AccountService {
-	return &AccountService{ur, ar}
+func NewAccountService(ar r.AccountRepository, ur r.UserRepository) *accountService {
+	return &accountService{ur, ar}
 }
 
-func (s *AccountService) Find(id int) (*models.Account, error) {
+func (s *accountService) Find(id int) (*models.Account, error) {
 	return s.ar.GetById(id)
 }
 
-func (s *AccountService) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
+func (s *accountService) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
 	account, err := s.ar.Store(&models.Account{
 		Email: request.Email,
 	})
@@ -43,6 +43,6 @@ func (s *AccountService) CreateAccount(request *request.CreateAccount) (*models.
 	return account, err
 }
 
-func (s *AccountService) DeleteAccount(account *models.Account) error {
+func (s *accountService) DeleteAccount(account *models.Account) error {
 	return nil
 }

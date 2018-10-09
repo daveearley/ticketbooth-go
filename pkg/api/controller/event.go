@@ -3,19 +3,31 @@ package controller
 import (
 	"github.com/daveearley/product/pkg/api/request"
 	"github.com/daveearley/product/pkg/service"
+	"github.com/daveearley/product/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type EventController struct {
-	srv service.EventServiceI
+type eventController struct {
+	srv service.EventService
 }
 
-func NewEventController(srv service.EventServiceI) *EventController {
-	return &EventController{srv}
+func NewEventController(srv service.EventService) *eventController {
+	return &eventController{srv}
 }
 
-func (ec *EventController) CreateEvent(c *gin.Context) {
+func (ec *eventController) GetById(c *gin.Context) {
+	event, err := ec.srv.Find(utils.Str2int(c.Param("id")))
+
+	if err != nil {
+		NotFoundResponse(c)
+		return
+	}
+
+	JsonResponse(c, event)
+}
+
+func (ec *eventController) CreateEvent(c *gin.Context) {
 	createRequest := request.CreateEvent{}
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {

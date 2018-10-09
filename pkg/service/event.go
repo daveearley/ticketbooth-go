@@ -7,15 +7,15 @@ import (
 	"github.com/volatiletech/null"
 )
 
-type EventService struct {
-	er repository.EventRepositoryI
+type eventService struct {
+	er repository.EventRepository
 }
 
-func NewEventService(repository repository.EventRepositoryI) *EventService {
-	return &EventService{repository}
+func NewEventService(repository repository.EventRepository) *eventService {
+	return &eventService{repository}
 }
 
-func (s *EventService) Find(id int) (*models.Event, error) {
+func (s *eventService) Find(id int) (*models.Event, error) {
 	event, err := s.er.GetById(id)
 
 	if err != nil {
@@ -25,7 +25,7 @@ func (s *EventService) Find(id int) (*models.Event, error) {
 	return event, nil
 }
 
-func (s *EventService) CreateEvent(req request.CreateEvent) (*models.Event, error) {
+func (s *eventService) CreateEvent(req request.CreateEvent) (*models.Event, error) {
 	event, err := s.er.Store(&models.Event{
 		Title:       req.Title,
 		Description: null.NewString(req.Description, true),

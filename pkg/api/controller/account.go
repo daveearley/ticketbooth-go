@@ -8,15 +8,15 @@ import (
 	"net/http"
 )
 
-type AccountController struct {
-	srv service.AccountServiceI
+type accountController struct {
+	srv service.AccountService
 }
 
-func NewAccountController(as service.AccountServiceI) *AccountController {
-	return &AccountController{as}
+func NewAccountController(as service.AccountService) *accountController {
+	return &accountController{as}
 }
 
-func (ac *AccountController) GetById(c *gin.Context) {
+func (ac *accountController) GetById(c *gin.Context) {
 	account, err := ac.srv.Find(utils.Str2int(c.Param("id")))
 
 	if err != nil {
@@ -27,7 +27,7 @@ func (ac *AccountController) GetById(c *gin.Context) {
 	JsonResponse(c, account)
 }
 
-func (ac *AccountController) CreateAccount(c *gin.Context) {
+func (ac *accountController) CreateAccount(c *gin.Context) {
 	createRequest := request.CreateAccount{}
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
 		ErrorResponse(c, http.StatusBadRequest, err)

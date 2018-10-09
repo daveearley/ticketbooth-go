@@ -37,7 +37,7 @@ func RegisterRoutes(server *gin.Engine, db *sql.DB) {
 				),
 			)
 			eventGroup.POST("", eventController.CreateEvent)
-			eventGroup.GET(":id", eventController.CreateEvent)
+			eventGroup.GET(":id", eventController.GetById)
 		}
 	}
 }
