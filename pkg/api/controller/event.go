@@ -35,7 +35,7 @@ func (ec *eventController) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	event, err := ec.srv.CreateEvent(createRequest)
+	event, err := ec.srv.CreateEvent(createRequest, GetUserFromContext(c))
 
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, err)

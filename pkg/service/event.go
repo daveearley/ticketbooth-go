@@ -25,14 +25,14 @@ func (s *eventService) Find(id int) (*models.Event, error) {
 	return event, nil
 }
 
-func (s *eventService) CreateEvent(req request.CreateEvent) (*models.Event, error) {
+func (s *eventService) CreateEvent(req request.CreateEvent, user *models.User) (*models.Event, error) {
 	event, err := s.er.Store(&models.Event{
 		Title:       req.Title,
 		Description: null.NewString(req.Description, true),
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
-		UserID:      46,
-		AccountID:   58,
+		UserID:      user.ID,
+		AccountID:   user.AccountID,
 	})
 
 	if err != nil {

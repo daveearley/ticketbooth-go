@@ -9,6 +9,7 @@ type AccountRepository interface {
 
 type UserRepository interface {
 	GetById(id int) (*models.User, error)
+	FindByEmail(email string) (*models.User, error)
 	Store(a *models.User) (*models.User, error)
 }
 

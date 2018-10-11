@@ -2,11 +2,24 @@ package controller
 
 import (
 	"github.com/biezhi/gorm-paginator/pagination"
+	"github.com/daveearley/product/pkg/models/generated"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"log"
 	"net/http"
 	"strconv"
 )
+
+// GetUserFromContext extracts the authenicated user from the gin context
+func GetUserFromContext(c *gin.Context) *models.User {
+	user, exists := c.Get("auth_user")
+
+	if !exists {
+		log.Fatal("No authenticated user found in context.")
+	}
+
+	return user.(*models.User)
+}
 
 func CreatedResponse(c *gin.Context, model interface{}) {
 	c.JSON(http.StatusCreated, &model)

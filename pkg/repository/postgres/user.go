@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/daveearley/product/pkg/models/generated"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type userRepository struct {
@@ -16,6 +17,16 @@ func NewUserRepository(conn *sql.DB) *userRepository {
 
 func (r *userRepository) GetById(id int) (*models.User, error) {
 	user, err := models.FindUser(r.db, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *userRepository) FindByEmail(email string) (*models.User, error) {
+	user, err := models.Users(qm.Where("email=?", email)).One(r.db)
 
 	if err != nil {
 		return nil, err

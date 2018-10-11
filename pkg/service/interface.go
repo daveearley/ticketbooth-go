@@ -18,5 +18,9 @@ type AccountService interface {
 
 type EventService interface {
 	Find(id int) (*models.Event, error)
-	CreateEvent(event request.CreateEvent) (*models.Event, error)
+	CreateEvent(event request.CreateEvent, user *models.User) (*models.Event, error)
+}
+
+type AuthService interface {
+	ValidateLoginAndReturnJwtToken(req *request.Login) (string, error)
 }
