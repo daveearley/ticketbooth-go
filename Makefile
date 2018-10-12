@@ -5,4 +5,4 @@ fmt:
 
 .PHONY: generate-models
 generate-models:
-	sqlboiler psql --no-context  --wipe -o ./pkg/models/generated -c ./config/sqlboiler.toml && echo 'Done generating models.'
+	sqlboiler psql --no-context  --wipe -o ./app/models/generated -c ./configs/sqlboiler.toml && echo 'Done generating models.'

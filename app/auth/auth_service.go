@@ -1,32 +1,36 @@
-package service
+package auth
 
 import (
 	"errors"
-	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/repository"
-	"github.com/daveearley/product/pkg/utils"
+	"github.com/daveearley/product/app/request"
+	"github.com/daveearley/product/app/user"
+	"github.com/daveearley/product/app/utils"
 	"github.com/dgrijalva/jwt-go"
 	"os"
 	"time"
 )
 
-type authService struct {
-	ur repository.UserRepository
+type Service interface {
+	ValidateLoginAndReturnJwtToken(req *request.Login) (string, error)
 }
 
-func NewAuthService(r repository.UserRepository) *authService {
-	return &authService{r}
+type service struct {
+	ur user.Repository
+}
+
+func NewService(r user.Repository) *service {
+	return &service{r}
 }
 
 // ValidateLoginAndReturnJwtToken accepts returns a JWT token when a valid email/password combo is passed
-func (s *authService) ValidateLoginAndReturnJwtToken(req *request.Login) (string, error) {
-	user, err := s.ur.FindByEmail(req.Username)
+func (s *service) ValidateLoginAndReturnJwtToken(req *request.Login) (string, error) {
+	u, err := s.ur.FindByEmail(req.Username)
 
 	if err != nil {
 		return "", err
 	}
 
-	if utils.CheckPasswordHash(req.Password, user.Password) == false {
+	if utils.CheckPasswordHash(req.Password, u.Password) == false {
 		return "", errors.New("incorrect password")
 	}
 
@@ -39,8 +43,8 @@ func (s *authService) ValidateLoginAndReturnJwtToken(req *request.Login) (string
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims{
-		user.ID,
-		user.AccountID,
+		u.ID,
+		u.AccountID,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().AddDate(1, 0, 0).Unix(),
 			Issuer:    "api",

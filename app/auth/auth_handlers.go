@@ -1,35 +1,35 @@
-package controller
+package auth
 
 import (
-	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/service"
+	"github.com/daveearley/product/app"
+	"github.com/daveearley/product/app/request"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 type authController struct {
-	srv service.AuthService
+	srv Service
 }
 
-func NewAuthController(srv service.AuthService) *authController {
+func NewController(srv Service) *authController {
 	return &authController{srv}
 }
 
 func (ac *authController) Login(c *gin.Context) {
 	var credentials *request.Login
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		ErrorResponse(c, http.StatusBadRequest, err)
+		app.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	token, err := ac.srv.ValidateLoginAndReturnJwtToken(credentials)
 
 	if err != nil {
-		ErrorResponse(c, http.StatusForbidden, err)
+		app.ErrorResponse(c, http.StatusForbidden, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	app.JsonResponse(c, gin.H{
 		"token": token,
 	})
 }

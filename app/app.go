@@ -1,13 +1,10 @@
-package controller
+package app
 
 import (
-	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/daveearley/product/pkg/models/generated"
+	"github.com/daveearley/product/app/models/generated"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 // GetUserFromContext extracts the authenicated user from the gin context
@@ -41,18 +38,4 @@ func JsonResponse(c *gin.Context, json interface{}) {
 
 func StringResponse(c *gin.Context, string string) {
 	c.String(http.StatusOK, string)
-}
-
-func PaginatedResponse(c *gin.Context, model interface{}, db *gorm.DB) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-
-	paginator := pagination.Pagging(&pagination.Param{
-		DB:      db,
-		Page:    page,
-		Limit:   limit,
-		OrderBy: []string{"id desc"},
-	}, &model)
-
-	c.JSON(http.StatusOK, paginator)
 }
