@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/daveearley/product/pkg/models"
-	"github.com/daveearley/product/pkg/utils"
+	"github.com/daveearley/product/app/models"
+	"github.com/daveearley/product/app/utils"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"os"
 )

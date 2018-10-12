@@ -1,17 +1,23 @@
-package service
+package account
 
 import (
-	"github.com/daveearley/product/pkg/api/request"
-	"github.com/daveearley/product/pkg/models/generated"
-	r "github.com/daveearley/product/pkg/repository"
+	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/product/app/request"
+	"github.com/daveearley/product/app/user"
 )
 
-type accountService struct {
-	ur r.UserRepository
-	ar r.AccountRepository
+type Service interface {
+	Find(id int) (*models.Account, error)
+	CreateAccount(request *request.CreateAccount) (*models.Account, error)
+	DeleteAccount(account *models.Account) error
 }
 
-func NewAccountService(ar r.AccountRepository, ur r.UserRepository) *accountService {
+type accountService struct {
+	ur user.Repository
+	ar Repository
+}
+
+func NewService(ar Repository, ur user.Repository) *accountService {
 	return &accountService{ur, ar}
 }
 

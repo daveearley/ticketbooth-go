@@ -1,9 +1,9 @@
-package service
+package attribute
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/daveearley/product/pkg/models/generated"
+	"github.com/daveearley/product/app/models/generated"
 	"reflect"
 )
 

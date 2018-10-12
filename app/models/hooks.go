@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/daveearley/product/pkg/models/generated"
-	"github.com/daveearley/product/pkg/utils"
+	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/product/app/utils"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

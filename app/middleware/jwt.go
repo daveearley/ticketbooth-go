@@ -2,7 +2,7 @@ package api
 
 import (
 	"errors"
-	"github.com/daveearley/product/pkg/repository"
+	"github.com/daveearley/product/app/user"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func JwtMiddleware(repository repository.UserRepository) gin.HandlerFunc {
+func JwtMiddleware(repository user.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := getTokenFromHeader(c.GetHeader("Authorization"))
 
@@ -33,7 +33,7 @@ func JwtMiddleware(repository repository.UserRepository) gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			user, err := repository.GetById(int(claims["user_id"].(float64)))
+			u, err := repository.GetById(int(claims["user_id"].(float64)))
 
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -41,7 +41,7 @@ func JwtMiddleware(repository repository.UserRepository) gin.HandlerFunc {
 				})
 			}
 
-			c.Set("auth_user", user)
+			c.Set("auth_user", u)
 			c.Next()
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
