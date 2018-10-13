@@ -7,15 +7,15 @@ import (
 	"net/http"
 )
 
-type authController struct {
+type controller struct {
 	srv Service
 }
 
-func NewController(srv Service) *authController {
-	return &authController{srv}
+func NewController(srv Service) *controller {
+	return &controller{srv}
 }
 
-func (ac *authController) Login(c *gin.Context) {
+func (ac *controller) Login(c *gin.Context) {
 	var credentials *request.Login
 	if err := c.ShouldBindJSON(&credentials); err != nil {
 		app.ErrorResponse(c, http.StatusBadRequest, err)

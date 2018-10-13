@@ -12,20 +12,20 @@ type Service interface {
 	DeleteAccount(account *models.Account) error
 }
 
-type accountService struct {
+type service struct {
 	ur user.Repository
 	ar Repository
 }
 
-func NewService(ar Repository, ur user.Repository) *accountService {
-	return &accountService{ur, ar}
+func NewService(ar Repository, ur user.Repository) *service {
+	return &service{ur, ar}
 }
 
-func (s *accountService) Find(id int) (*models.Account, error) {
+func (s *service) Find(id int) (*models.Account, error) {
 	return s.ar.GetById(id)
 }
 
-func (s *accountService) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
+func (s *service) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
 	account, err := s.ar.Store(&models.Account{
 		Email: request.Email,
 	})
@@ -49,6 +49,6 @@ func (s *accountService) CreateAccount(request *request.CreateAccount) (*models.
 	return account, err
 }
 
-func (s *accountService) DeleteAccount(account *models.Account) error {
+func (s *service) DeleteAccount(account *models.Account) error {
 	return nil
 }

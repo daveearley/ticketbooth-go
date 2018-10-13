@@ -8,15 +8,15 @@ import (
 	"net/http"
 )
 
-type eventController struct {
+type controller struct {
 	srv Service
 }
 
-func NewController(srv Service) *eventController {
-	return &eventController{srv}
+func NewController(srv Service) *controller {
+	return &controller{srv}
 }
 
-func (ec *eventController) GetById(c *gin.Context) {
+func (ec *controller) GetById(c *gin.Context) {
 	event, err := ec.srv.Find(utils.Str2int(c.Param("id")))
 
 	if err != nil {
@@ -27,7 +27,7 @@ func (ec *eventController) GetById(c *gin.Context) {
 	app.JsonResponse(c, event)
 }
 
-func (ec *eventController) CreateEvent(c *gin.Context) {
+func (ec *controller) CreateEvent(c *gin.Context) {
 	createRequest := request.CreateEvent{}
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
