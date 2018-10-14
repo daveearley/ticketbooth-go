@@ -2,11 +2,11 @@ package routes
 
 import (
 	"database/sql"
-	"github.com/daveearley/product/app"
 	"github.com/daveearley/product/app/account"
 	"github.com/daveearley/product/app/auth"
 	"github.com/daveearley/product/app/event"
 	"github.com/daveearley/product/app/middleware"
+	"github.com/daveearley/product/app/response"
 	"github.com/daveearley/product/app/user"
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +14,7 @@ import (
 // Register handles all DI and creation of routes
 func Register(server *gin.Engine, db *sql.DB) {
 	server.GET("/healthcheck", func(context *gin.Context) {
-		app.StringResponse(context, "")
+		response.StringResponse(context, "")
 	})
 
 	// Login routes
@@ -53,6 +53,7 @@ func Register(server *gin.Engine, db *sql.DB) {
 			)
 			eventGroup.POST("", eventController.CreateEvent)
 			eventGroup.GET(":id", eventController.GetById)
+			eventGroup.GET("/", eventController.GetEvents)
 		}
 	}
 }

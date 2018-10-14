@@ -1,8 +1,8 @@
 package account
 
 import (
-	"github.com/daveearley/product/app"
 	"github.com/daveearley/product/app/request"
+	"github.com/daveearley/product/app/response"
 	"github.com/daveearley/product/app/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -20,27 +20,27 @@ func (ac *controller) GetById(c *gin.Context) {
 	account, err := ac.srv.Find(utils.Str2int(c.Param("id")))
 
 	if err != nil {
-		app.NotFoundResponse(c)
+		response.NotFoundResponse(c)
 		return
 	}
 
-	app.JsonResponse(c, account)
+	response.JsonResponse(c, account)
 }
 
 func (ac *controller) CreateAccount(c *gin.Context) {
 	createRequest := request.CreateAccount{}
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
-		app.ErrorResponse(c, http.StatusBadRequest, err)
+		response.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	account, err := ac.srv.CreateAccount(&createRequest)
 
 	if err != nil {
-		app.ErrorResponse(c, http.StatusInternalServerError, err)
+		response.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	app.CreatedResponse(c, account)
+	response.CreatedResponse(c, account)
 	return
 }

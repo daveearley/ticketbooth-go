@@ -3,6 +3,7 @@ package event
 import (
 	"github.com/daveearley/product/app/attribute"
 	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/product/app/pagination"
 	"github.com/daveearley/product/app/request"
 	"github.com/volatiletech/null"
 )
@@ -10,6 +11,7 @@ import (
 type Service interface {
 	Find(id int) (*models.Event, error)
 	CreateEvent(event request.CreateEvent, user *models.User) (*models.Event, error)
+	ListEvents(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
 }
 
 type service struct {
@@ -49,4 +51,14 @@ func (s *service) CreateEvent(req request.CreateEvent, user *models.User) (*mode
 	}
 
 	return event, nil
+}
+
+func (s *service) ListEvents(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
+	events, err := s.er.List(p, authUser)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return events, nil
 }
