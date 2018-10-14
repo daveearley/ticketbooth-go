@@ -18,11 +18,7 @@ func Register(server *gin.Engine, db *sql.DB) {
 	})
 
 	// Login routes
-	authController := auth.NewController(
-		auth.NewService(
-			user.NewRepository(db),
-		),
-	)
+	authController := auth.NewController(auth.NewService(user.NewRepository(db)))
 	server.POST("/login", authController.Login)
 
 	apiGroup := server.Group("/api")
@@ -33,12 +29,7 @@ func Register(server *gin.Engine, db *sql.DB) {
 		// Account routes
 		accountGroup := apiGroup.Group("account")
 		{
-			accountController := account.NewController(
-				account.NewService(
-					account.NewRepository(db),
-					userRepo,
-				),
-			)
+			accountController := account.NewController(account.NewService(account.NewRepository(db), userRepo))
 			accountGroup.POST("", accountController.CreateAccount)
 			accountGroup.GET(":id", accountController.GetById)
 		}
@@ -46,11 +37,7 @@ func Register(server *gin.Engine, db *sql.DB) {
 		// Event Routes
 		eventGroup := apiGroup.Group("events")
 		{
-			eventController := event.NewController(
-				event.NewService(
-					event.NewRepository(db),
-				),
-			)
+			eventController := event.NewController(event.NewService(event.NewRepository(db)))
 			eventGroup.POST("", eventController.CreateEvent)
 			eventGroup.GET(":id", eventController.GetById)
 			eventGroup.GET("/", eventController.GetEvents)
