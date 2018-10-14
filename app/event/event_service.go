@@ -10,8 +10,8 @@ import (
 
 type Service interface {
 	Find(id int) (*models.Event, error)
-	CreateEvent(event request.CreateEvent, user *models.User) (*models.Event, error)
-	ListEvents(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
+	Create(event request.CreateEvent, user *models.User) (*models.Event, error)
+	List(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
 }
 
 type service struct {
@@ -32,7 +32,7 @@ func (s *service) Find(id int) (*models.Event, error) {
 	return event, nil
 }
 
-func (s *service) CreateEvent(req request.CreateEvent, user *models.User) (*models.Event, error) {
+func (s *service) Create(req request.CreateEvent, user *models.User) (*models.Event, error) {
 	event, err := s.er.Store(&models.Event{
 		Title:       req.Title,
 		Description: null.NewString(req.Description, true),
@@ -53,7 +53,7 @@ func (s *service) CreateEvent(req request.CreateEvent, user *models.User) (*mode
 	return event, nil
 }
 
-func (s *service) ListEvents(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
+func (s *service) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
 	events, err := s.er.List(p, authUser)
 
 	if err != nil {

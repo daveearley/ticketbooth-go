@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -29,6 +30,8 @@ type Ticket struct {
 	CreatedAt                time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt                time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	DeletedAt                time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	SaleStartDate            null.Time `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
+	SaleEndDate              null.Time `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +46,8 @@ var TicketColumns = struct {
 	CreatedAt                string
 	UpdatedAt                string
 	DeletedAt                string
+	SaleStartDate            string
+	SaleEndDate              string
 }{
 	ID:                       "id",
 	Title:                    "title",
@@ -52,19 +57,21 @@ var TicketColumns = struct {
 	CreatedAt:                "created_at",
 	UpdatedAt:                "updated_at",
 	DeletedAt:                "deleted_at",
+	SaleStartDate:            "sale_start_date",
+	SaleEndDate:              "sale_end_date",
 }
 
 // TicketRels is where relationship names are stored.
 var TicketRels = struct {
 	Event            string
 	Attendees        string
-	TicketAttributes string
+	Attributes       string
 	Questions        string
 	TransactionItems string
 }{
 	Event:            "Event",
 	Attendees:        "Attendees",
-	TicketAttributes: "TicketAttributes",
+	Attributes:       "Attributes",
 	Questions:        "Questions",
 	TransactionItems: "TransactionItems",
 }
@@ -73,7 +80,7 @@ var TicketRels = struct {
 type ticketR struct {
 	Event            *Event
 	Attendees        AttendeeSlice
-	TicketAttributes TicketAttributeSlice
+	Attributes       AttributeSlice
 	Questions        QuestionSlice
 	TransactionItems TransactionItemSlice
 }
@@ -87,8 +94,8 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"id", "title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at"}
-	ticketColumnsWithoutDefault = []string{"title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at"}
+	ticketColumns               = []string{"id", "title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
+	ticketColumnsWithoutDefault = []string{"title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
 	ticketColumnsWithDefault    = []string{"id"}
 	ticketPrimaryKeyColumns     = []string{"id"}
 )
@@ -363,22 +370,23 @@ func (o *Ticket) Attendees(mods ...qm.QueryMod) attendeeQuery {
 	return query
 }
 
-// TicketAttributes retrieves all the ticket_attribute's TicketAttributes with an executor.
-func (o *Ticket) TicketAttributes(mods ...qm.QueryMod) ticketAttributeQuery {
+// Attributes retrieves all the attribute's Attributes with an executor.
+func (o *Ticket) Attributes(mods ...qm.QueryMod) attributeQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
+		qm.InnerJoin("\"ticket_attributes\" on \"attributes\".\"id\" = \"ticket_attributes\".\"attribute_id\""),
 		qm.Where("\"ticket_attributes\".\"ticket_id\"=?", o.ID),
 	)
 
-	query := TicketAttributes(queryMods...)
-	queries.SetFrom(query.Query, "\"ticket_attributes\"")
+	query := Attributes(queryMods...)
+	queries.SetFrom(query.Query, "\"attributes\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"ticket_attributes\".*"})
+		queries.SetSelect(query.Query, []string{"\"attributes\".*"})
 	}
 
 	return query
@@ -613,9 +621,9 @@ func (ticketL) LoadAttendees(e boil.Executor, singular bool, maybeTicket interfa
 	return nil
 }
 
-// LoadTicketAttributes allows an eager lookup of values, cached into the
+// LoadAttributes allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (ticketL) LoadTicketAttributes(e boil.Executor, singular bool, maybeTicket interface{}, mods queries.Applicator) error {
+func (ticketL) LoadAttributes(e boil.Executor, singular bool, maybeTicket interface{}, mods queries.Applicator) error {
 	var slice []*Ticket
 	var object *Ticket
 
@@ -648,29 +656,48 @@ func (ticketL) LoadTicketAttributes(e boil.Executor, singular bool, maybeTicket 
 		}
 	}
 
-	query := NewQuery(qm.From(`ticket_attributes`), qm.WhereIn(`ticket_id in ?`, args...))
+	query := NewQuery(
+		qm.Select("\"attributes\".*, \"a\".\"ticket_id\""),
+		qm.From("\"attributes\""),
+		qm.InnerJoin("\"ticket_attributes\" as \"a\" on \"attributes\".\"id\" = \"a\".\"attribute_id\""),
+		qm.WhereIn("\"a\".\"ticket_id\" in ?", args...),
+	)
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.Query(e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load ticket_attributes")
+		return errors.Wrap(err, "failed to eager load attributes")
 	}
 
-	var resultSlice []*TicketAttribute
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice ticket_attributes")
+	var resultSlice []*Attribute
+
+	var localJoinCols []int
+	for results.Next() {
+		one := new(Attribute)
+		var localJoinCol int
+
+		err = results.Scan(&one.ID, &one.Name, &one.Value, &one.Type, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &localJoinCol)
+		if err != nil {
+			return errors.Wrap(err, "failed to scan eager loaded results for attributes")
+		}
+		if err = results.Err(); err != nil {
+			return errors.Wrap(err, "failed to plebian-bind eager loaded slice attributes")
+		}
+
+		resultSlice = append(resultSlice, one)
+		localJoinCols = append(localJoinCols, localJoinCol)
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on ticket_attributes")
+		return errors.Wrap(err, "failed to close results in eager load on attributes")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ticket_attributes")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for attributes")
 	}
 
-	if len(ticketAttributeAfterSelectHooks) != 0 {
+	if len(attributeAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(e); err != nil {
 				return err
@@ -678,24 +705,25 @@ func (ticketL) LoadTicketAttributes(e boil.Executor, singular bool, maybeTicket 
 		}
 	}
 	if singular {
-		object.R.TicketAttributes = resultSlice
+		object.R.Attributes = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &ticketAttributeR{}
+				foreign.R = &attributeR{}
 			}
-			foreign.R.Ticket = object
+			foreign.R.Tickets = append(foreign.R.Tickets, object)
 		}
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
+	for i, foreign := range resultSlice {
+		localJoinCol := localJoinCols[i]
 		for _, local := range slice {
-			if local.ID == foreign.TicketID {
-				local.R.TicketAttributes = append(local.R.TicketAttributes, foreign)
+			if local.ID == localJoinCol {
+				local.R.Attributes = append(local.R.Attributes, foreign)
 				if foreign.R == nil {
-					foreign.R = &ticketAttributeR{}
+					foreign.R = &attributeR{}
 				}
-				foreign.R.Ticket = local
+				foreign.R.Tickets = append(foreign.R.Tickets, local)
 				break
 			}
 		}
@@ -1006,57 +1034,144 @@ func (o *Ticket) AddAttendees(exec boil.Executor, insert bool, related ...*Atten
 	return nil
 }
 
-// AddTicketAttributes adds the given related objects to the existing relationships
+// AddAttributes adds the given related objects to the existing relationships
 // of the ticket, optionally inserting them as new records.
-// Appends related to o.R.TicketAttributes.
-// Sets related.R.Ticket appropriately.
-func (o *Ticket) AddTicketAttributes(exec boil.Executor, insert bool, related ...*TicketAttribute) error {
+// Appends related to o.R.Attributes.
+// Sets related.R.Tickets appropriately.
+func (o *Ticket) AddAttributes(exec boil.Executor, insert bool, related ...*Attribute) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.TicketID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"ticket_attributes\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"ticket_id"}),
-				strmangle.WhereClause("\"", "\"", 2, ticketAttributePrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.TicketID = o.ID
 		}
 	}
 
+	for _, rel := range related {
+		query := "insert into \"ticket_attributes\" (\"ticket_id\", \"attribute_id\") values ($1, $2)"
+		values := []interface{}{o.ID, rel.ID}
+
+		if boil.DebugMode {
+			fmt.Fprintln(boil.DebugWriter, query)
+			fmt.Fprintln(boil.DebugWriter, values)
+		}
+
+		_, err = exec.Exec(query, values...)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert into join table")
+		}
+	}
 	if o.R == nil {
 		o.R = &ticketR{
-			TicketAttributes: related,
+			Attributes: related,
 		}
 	} else {
-		o.R.TicketAttributes = append(o.R.TicketAttributes, related...)
+		o.R.Attributes = append(o.R.Attributes, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &ticketAttributeR{
-				Ticket: o,
+			rel.R = &attributeR{
+				Tickets: TicketSlice{o},
 			}
 		} else {
-			rel.R.Ticket = o
+			rel.R.Tickets = append(rel.R.Tickets, o)
 		}
 	}
 	return nil
+}
+
+// SetAttributes removes all previously related items of the
+// ticket replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Tickets's Attributes accordingly.
+// Replaces o.R.Attributes with related.
+// Sets related.R.Tickets's Attributes accordingly.
+func (o *Ticket) SetAttributes(exec boil.Executor, insert bool, related ...*Attribute) error {
+	query := "delete from \"ticket_attributes\" where \"ticket_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	removeAttributesFromTicketsSlice(o, related)
+	if o.R != nil {
+		o.R.Attributes = nil
+	}
+	return o.AddAttributes(exec, insert, related...)
+}
+
+// RemoveAttributes relationships from objects passed in.
+// Removes related items from R.Attributes (uses pointer comparison, removal does not keep order)
+// Sets related.R.Tickets.
+func (o *Ticket) RemoveAttributes(exec boil.Executor, related ...*Attribute) error {
+	var err error
+	query := fmt.Sprintf(
+		"delete from \"ticket_attributes\" where \"ticket_id\" = $1 and \"attribute_id\" in (%s)",
+		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
+	)
+	values := []interface{}{o.ID}
+	for _, rel := range related {
+		values = append(values, rel.ID)
+	}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err = exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+	removeAttributesFromTicketsSlice(o, related)
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Attributes {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Attributes)
+			if ln > 1 && i < ln-1 {
+				o.R.Attributes[i] = o.R.Attributes[ln-1]
+			}
+			o.R.Attributes = o.R.Attributes[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+func removeAttributesFromTicketsSlice(o *Ticket, related []*Attribute) {
+	for _, rel := range related {
+		if rel.R == nil {
+			continue
+		}
+		for i, ri := range rel.R.Tickets {
+			if o.ID != ri.ID {
+				continue
+			}
+
+			ln := len(rel.R.Tickets)
+			if ln > 1 && i < ln-1 {
+				rel.R.Tickets[i] = rel.R.Tickets[ln-1]
+			}
+			rel.R.Tickets = rel.R.Tickets[:ln-1]
+			break
+		}
+	}
 }
 
 // AddQuestions adds the given related objects to the existing relationships

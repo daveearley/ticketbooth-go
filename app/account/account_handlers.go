@@ -34,7 +34,7 @@ func (ac *controller) CreateAccount(c *gin.Context) {
 		return
 	}
 
-	account, err := ac.srv.CreateAccount(&createRequest)
+	account, err := ac.srv.Create(&createRequest)
 
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, err)

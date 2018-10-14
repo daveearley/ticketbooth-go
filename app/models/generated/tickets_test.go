@@ -559,14 +559,14 @@ func testTicketToManyAttendees(t *testing.T) {
 	}
 }
 
-func testTicketToManyTicketAttributes(t *testing.T) {
+func testTicketToManyAttributes(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
 	var a Ticket
-	var b, c TicketAttribute
+	var b, c Attribute
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, ticketDBTypes, true, ticketColumnsWithDefault...); err != nil {
@@ -577,15 +577,12 @@ func testTicketToManyTicketAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, ticketAttributeDBTypes, false, ticketAttributeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, attributeDBTypes, false, attributeColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, ticketAttributeDBTypes, false, ticketAttributeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, attributeDBTypes, false, attributeColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-
-	b.TicketID = a.ID
-	c.TicketID = a.ID
 
 	if err = b.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
@@ -594,17 +591,26 @@ func testTicketToManyTicketAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ticketAttribute, err := a.TicketAttributes().All(tx)
+	_, err = tx.Exec("insert into \"ticket_attributes\" (\"ticket_id\", \"attribute_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"ticket_attributes\" (\"ticket_id\", \"attribute_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	attribute, err := a.Attributes().All(tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
-	for _, v := range ticketAttribute {
-		if v.TicketID == b.TicketID {
+	for _, v := range attribute {
+		if v.ID == b.ID {
 			bFound = true
 		}
-		if v.TicketID == c.TicketID {
+		if v.ID == c.ID {
 			cFound = true
 		}
 	}
@@ -617,23 +623,23 @@ func testTicketToManyTicketAttributes(t *testing.T) {
 	}
 
 	slice := TicketSlice{&a}
-	if err = a.L.LoadTicketAttributes(tx, false, (*[]*Ticket)(&slice), nil); err != nil {
+	if err = a.L.LoadAttributes(tx, false, (*[]*Ticket)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TicketAttributes); got != 2 {
+	if got := len(a.R.Attributes); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.TicketAttributes = nil
-	if err = a.L.LoadTicketAttributes(tx, true, &a, nil); err != nil {
+	a.R.Attributes = nil
+	if err = a.L.LoadAttributes(tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.TicketAttributes); got != 2 {
+	if got := len(a.R.Attributes); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
 	if t.Failed() {
-		t.Logf("%#v", ticketAttribute)
+		t.Logf("%#v", attribute)
 	}
 }
 
@@ -873,22 +879,22 @@ func testTicketToManyAddOpAttendees(t *testing.T) {
 		}
 	}
 }
-func testTicketToManyAddOpTicketAttributes(t *testing.T) {
+func testTicketToManyAddOpAttributes(t *testing.T) {
 	var err error
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
 	var a Ticket
-	var b, c, d, e TicketAttribute
+	var b, c, d, e Attribute
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*TicketAttribute{&b, &c, &d, &e}
+	foreigners := []*Attribute{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, ticketAttributeDBTypes, false, strmangle.SetComplement(ticketAttributePrimaryKeyColumns, ticketAttributeColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -903,13 +909,13 @@ func testTicketToManyAddOpTicketAttributes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*TicketAttribute{
+	foreignersSplitByInsertion := [][]*Attribute{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddTicketAttributes(tx, i != 0, x...)
+		err = a.AddAttributes(tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -917,28 +923,21 @@ func testTicketToManyAddOpTicketAttributes(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.TicketID {
-			t.Error("foreign key was wrong value", a.ID, first.TicketID)
+		if first.R.Tickets[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
-		if a.ID != second.TicketID {
-			t.Error("foreign key was wrong value", a.ID, second.TicketID)
-		}
-
-		if first.R.Ticket != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Ticket != &a {
-			t.Error("relationship was not added properly to the foreign slice")
+		if second.R.Tickets[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
 
-		if a.R.TicketAttributes[i*2] != first {
+		if a.R.Attributes[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.TicketAttributes[i*2+1] != second {
+		if a.R.Attributes[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.TicketAttributes().Count(tx)
+		count, err := a.Attributes().Count(tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -947,6 +946,164 @@ func testTicketToManyAddOpTicketAttributes(t *testing.T) {
 		}
 	}
 }
+
+func testTicketToManySetOpAttributes(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c, d, e Attribute
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Attribute{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetAttributes(tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetAttributes(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Tickets) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Tickets) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Tickets[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Tickets[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.Attributes[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Attributes[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testTicketToManyRemoveOpAttributes(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c, d, e Attribute
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Attribute{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, attributeDBTypes, false, strmangle.SetComplement(attributePrimaryKeyColumns, attributeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddAttributes(tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveAttributes(tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Attributes().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Tickets) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Tickets) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Tickets[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Tickets[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.Attributes) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Attributes[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Attributes[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testTicketToManyAddOpQuestions(t *testing.T) {
 	var err error
 
@@ -1425,7 +1582,7 @@ func testTicketsSelect(t *testing.T) {
 }
 
 var (
-	ticketDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `IntitalQuantityAvailable`: `integer`, `QuantitySold`: `integer`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`}
+	ticketDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `IntitalQuantityAvailable`: `integer`, `QuantitySold`: `integer`, `SaleEndDate`: `timestamp without time zone`, `SaleStartDate`: `timestamp without time zone`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`}
 	_             = bytes.MinRead
 )
 

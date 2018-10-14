@@ -8,8 +8,8 @@ import (
 
 type Service interface {
 	Find(id int) (*models.Account, error)
-	CreateAccount(request *request.CreateAccount) (*models.Account, error)
-	DeleteAccount(account *models.Account) error
+	Create(request *request.CreateAccount) (*models.Account, error)
+	Delete(account *models.Account) error
 }
 
 type service struct {
@@ -25,7 +25,7 @@ func (s *service) Find(id int) (*models.Account, error) {
 	return s.ar.GetById(id)
 }
 
-func (s *service) CreateAccount(request *request.CreateAccount) (*models.Account, error) {
+func (s *service) Create(request *request.CreateAccount) (*models.Account, error) {
 	account, err := s.ar.Store(&models.Account{
 		Email: request.Email,
 	})
@@ -49,6 +49,6 @@ func (s *service) CreateAccount(request *request.CreateAccount) (*models.Account
 	return account, err
 }
 
-func (s *service) DeleteAccount(account *models.Account) error {
+func (s *service) Delete(account *models.Account) error {
 	return nil
 }

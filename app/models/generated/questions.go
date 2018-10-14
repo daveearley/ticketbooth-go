@@ -640,7 +640,7 @@ func (questionL) LoadTickets(e boil.Executor, singular bool, maybeQuestion inter
 		one := new(Ticket)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.Title, &one.EventID, &one.IntitalQuantityAvailable, &one.QuantitySold, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Title, &one.EventID, &one.IntitalQuantityAvailable, &one.QuantitySold, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.SaleStartDate, &one.SaleEndDate, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for tickets")
 		}

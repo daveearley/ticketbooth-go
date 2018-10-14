@@ -5,14 +5,15 @@ import (
 )
 
 const defaultPaginationLimit = 20
-const defaultCursorValue = 0
+const defaultOffset = 0
 
+// Params stores pagination request information.
+// todo: ideally switch to cursor pagination
 type Params struct {
-	Limit            int    `form:"limit" json:"limit"`
+	PerPage          int    `form:"per_page" json:"per_page" binding:"max=100"`
 	OrderBy          string `form:"order_by" json:"-"`
 	OrderByDirection string `json:"-"`
-	CursorID         int    `form:"cursor" json:"cursor_id,omitempty"`
-	NextCursorId     int    `json:"next_cursor"`
+	Page             int    `form:"page" json:"page,omitempty"`
 	ResultCount      int    `json:"result_count,omitempty"`
 }
 
@@ -31,18 +32,18 @@ func (p *Params) GetOrderBy() string {
 	return strings.Split(p.OrderBy, "_")[0]
 }
 
-func (p *Params) GetCursorID() int {
-	if p.CursorID == 0 {
-		return defaultCursorValue
+func (p *Params) GetOffset() int {
+	if p.Page == 0 || p.Page == 1 {
+		return defaultOffset
 	}
 
-	return p.CursorID
+	return (p.Page - 1) * p.GetLimit()
 }
 
 func (p *Params) GetLimit() int {
-	if p.Limit == 0 {
-		return defaultPaginationLimit
+	if p.PerPage == 0 {
+		p.PerPage = defaultPaginationLimit
 	}
 
-	return p.Limit
+	return p.PerPage
 }

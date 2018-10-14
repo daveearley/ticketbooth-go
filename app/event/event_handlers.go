@@ -38,7 +38,7 @@ func (ec *controller) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	event, err := ec.srv.CreateEvent(createRequest, app.GetUserFromContext(c))
+	event, err := ec.srv.Create(createRequest, app.GetUserFromContext(c))
 
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, err)
@@ -57,12 +57,12 @@ func (ec *controller) GetEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := ec.srv.ListEvents(&paginationParams, app.GetUserFromContext(c))
+	events, err := ec.srv.List(&paginationParams, app.GetUserFromContext(c))
 
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Paginated(c, &paginationParams, events)
+	response.Paginated(c, &paginationParams, TransformMany(events))
 }

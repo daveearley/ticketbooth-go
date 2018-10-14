@@ -5,6 +5,7 @@ import (
 	"github.com/daveearley/product/app/models/generated"
 	"github.com/daveearley/product/app/pagination"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type Repository interface {
@@ -45,18 +46,13 @@ func (r *repository) SetAttributes(event *models.Event, attr []*models.Attribute
 }
 
 func (r *repository) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
-	boil.DebugMode = true
-
 	queryMods := pagination.QueryMods(p, authUser)
+	queryMods = append(queryMods, qm.Load("Attributes"))
 
 	events, err := models.Events(queryMods...).All(r.db)
 
 	if err != nil {
 		return nil, err
-	}
-
-	if pagination.ShouldSetCursor(p, len(events)) {
-		p.NextCursorId = events[len(events)-1].ID
 	}
 
 	return events, nil
