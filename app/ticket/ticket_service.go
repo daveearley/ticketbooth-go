@@ -10,8 +10,8 @@ import (
 
 type Service interface {
 	Find(id int) (*models.Ticket, error)
-	Create(ticket request.CreateTicket, user *models.Event) (*models.Ticket, error)
-	List(p *pagination.Params, authUser *models.Event) ([]*models.Ticket, error)
+	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
+	List(p *pagination.Params, authUser *models.User) ([]*models.Ticket, error)
 }
 
 type service struct {

@@ -16,6 +16,12 @@ func ErrorResponse(c *gin.Context, statusCode int, err error) {
 	})
 }
 
+func Unauthorized(c *gin.Context) {
+	c.JSON(http.StatusForbidden, gin.H{
+		"error": "This action is unauthorized",
+	})
+}
+
 func NotFoundResponse(c *gin.Context) {
 	c.String(http.StatusNotFound, "")
 }

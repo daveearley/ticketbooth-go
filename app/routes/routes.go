@@ -7,40 +7,47 @@ import (
 	"github.com/daveearley/product/app/event"
 	"github.com/daveearley/product/app/middleware"
 	"github.com/daveearley/product/app/response"
+	"github.com/daveearley/product/app/ticket"
 	"github.com/daveearley/product/app/user"
 	"github.com/gin-gonic/gin"
 )
 
 // Register handles all DI and creation of routes
 func Register(server *gin.Engine, db *sql.DB) {
+	// Health Check
 	server.GET("/healthcheck", func(context *gin.Context) {
 		response.StringResponse(context, "")
 	})
 
-	// Login routes
-	authController := auth.NewController(auth.NewService(user.NewRepository(db)))
+	// Repos
+	userRepo := user.NewRepository(db)
+
+	// Services
+	authService := auth.NewService(user.NewRepository(db))
+	eventService := event.NewService(event.NewRepository(db))
+	ticketService := ticket.NewService(ticket.NewRepository(db))
+	accountService := account.NewService(account.NewRepository(db), userRepo)
+
+	// Controllers
+	authController := auth.NewController(authService)
+	ticketController := ticket.NewController(ticketService, eventService)
+	eventController := event.NewController(eventService)
+	accountController := account.NewController(accountService)
+
 	server.POST("/login", authController.Login)
 
-	apiGroup := server.Group("/api")
+	apiGroup := server.Group("/v1")
 	{
-		userRepo := user.NewRepository(db)
 		apiGroup.Use(api.JwtMiddleware(userRepo))
 
 		// Account routes
-		accountGroup := apiGroup.Group("account")
-		{
-			accountController := account.NewController(account.NewService(account.NewRepository(db), userRepo))
-			accountGroup.POST("", accountController.CreateAccount)
-			accountGroup.GET(":id", accountController.GetById)
-		}
+		apiGroup.POST("/account", accountController.CreateAccount)
+		apiGroup.GET("account/:id", accountController.GetById)
 
-		// Event Routes
-		eventGroup := apiGroup.Group("events")
-		{
-			eventController := event.NewController(event.NewService(event.NewRepository(db)))
-			eventGroup.POST("", eventController.CreateEvent)
-			eventGroup.GET(":id", eventController.GetById)
-			eventGroup.GET("/", eventController.GetEvents)
-		}
+		// Event routes
+		apiGroup.POST("/events", eventController.CreateEvent)
+		apiGroup.GET("/events/:id", eventController.GetById)
+		apiGroup.GET("/events", eventController.GetEvents)
+		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
 	}
 }

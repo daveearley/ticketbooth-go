@@ -22,6 +22,11 @@ func NewController(srv Service) *controller {
 func (ec *controller) GetById(c *gin.Context) {
 	event, err := ec.srv.Find(utils.Str2int(c.Param("id")))
 
+	if !app.IsUserAuthorized(c, event) {
+		response.Unauthorized(c)
+		return
+	}
+
 	if err != nil {
 		response.NotFoundResponse(c)
 		return
