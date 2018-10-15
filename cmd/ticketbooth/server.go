@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/daveearley/product/app/routes"
+	"github.com/daveearley/product/app/api/routes"
 	"github.com/daveearley/product/database"
 	"github.com/gin-gonic/gin"
 	env "github.com/joho/godotenv"

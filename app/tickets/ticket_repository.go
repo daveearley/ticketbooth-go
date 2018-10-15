@@ -2,8 +2,8 @@ package tickets
 
 import (
 	"database/sql"
+	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/models/generated"
-	"github.com/daveearley/product/app/pagination"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

@@ -1,10 +1,10 @@
 package tickets
 
 import (
+	"github.com/daveearley/product/app/api/request"
+	"github.com/daveearley/product/app/api/response"
 	"github.com/daveearley/product/app/events"
 	"github.com/daveearley/product/app/models/generated"
-	"github.com/daveearley/product/app/request"
-	"github.com/daveearley/product/app/response"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

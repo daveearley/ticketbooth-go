@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"github.com/daveearley/product/app/request"
+	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/users"
 	"github.com/daveearley/product/app/utils"
 	"github.com/dgrijalva/jwt-go"

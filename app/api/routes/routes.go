@@ -3,10 +3,10 @@ package routes
 import (
 	"database/sql"
 	"github.com/daveearley/product/app/accounts"
+	"github.com/daveearley/product/app/api/middleware"
+	"github.com/daveearley/product/app/api/response"
 	"github.com/daveearley/product/app/auth"
 	"github.com/daveearley/product/app/events"
-	"github.com/daveearley/product/app/middleware"
-	"github.com/daveearley/product/app/response"
 	"github.com/daveearley/product/app/tickets"
 	"github.com/daveearley/product/app/users"
 	"github.com/gin-gonic/gin"

@@ -3,9 +3,9 @@ package events
 import (
 	"fmt"
 	"github.com/daveearley/product/app"
-	"github.com/daveearley/product/app/pagination"
-	"github.com/daveearley/product/app/request"
-	"github.com/daveearley/product/app/response"
+	"github.com/daveearley/product/app/api/pagination"
+	"github.com/daveearley/product/app/api/request"
+	"github.com/daveearley/product/app/api/response"
 	"github.com/daveearley/product/app/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"

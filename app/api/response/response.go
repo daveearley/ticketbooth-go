@@ -1,7 +1,7 @@
 package response
 
 import (
-	"github.com/daveearley/product/app/pagination"
+	"github.com/daveearley/product/app/api/pagination"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
