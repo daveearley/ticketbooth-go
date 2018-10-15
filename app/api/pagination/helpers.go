@@ -5,6 +5,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+// QueryMods returns SQLBoiler query mods required for pagination
 func QueryMods(p *Params, authUser *models.User) []qm.QueryMod {
 	var mods []qm.QueryMod
 
