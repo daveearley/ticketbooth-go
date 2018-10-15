@@ -1,4 +1,4 @@
-package user
+package users
 
 import "github.com/daveearley/product/app/models/generated"
 

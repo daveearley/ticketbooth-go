@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 	"github.com/daveearley/product/app/request"
-	"github.com/daveearley/product/app/user"
+	"github.com/daveearley/product/app/users"
 	"github.com/daveearley/product/app/utils"
 	"github.com/dgrijalva/jwt-go"
 	"os"
@@ -15,10 +15,10 @@ type Service interface {
 }
 
 type service struct {
-	ur user.Repository
+	ur users.Repository
 }
 
-func NewService(r user.Repository) *service {
+func NewService(r users.Repository) *service {
 	return &service{r}
 }
 

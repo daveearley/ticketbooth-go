@@ -1,9 +1,9 @@
-package account
+package accounts
 
 import (
 	"github.com/daveearley/product/app/models/generated"
 	"github.com/daveearley/product/app/request"
-	"github.com/daveearley/product/app/user"
+	"github.com/daveearley/product/app/users"
 )
 
 type Service interface {
@@ -13,11 +13,11 @@ type Service interface {
 }
 
 type service struct {
-	ur user.Repository
+	ur users.Repository
 	ar Repository
 }
 
-func NewService(ar Repository, ur user.Repository) *service {
+func NewService(ar Repository, ur users.Repository) *service {
 	return &service{ur, ar}
 }
 

@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"errors"
-	"github.com/daveearley/product/app/user"
+	"github.com/daveearley/product/app/users"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func JwtMiddleware(repository user.Repository) gin.HandlerFunc {
+func JwtMiddleware(repository users.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := getTokenFromHeader(c.GetHeader("Authorization"))
 

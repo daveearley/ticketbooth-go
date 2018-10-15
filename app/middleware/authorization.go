@@ -2,48 +2,48 @@ package middleware
 
 import (
 	"github.com/daveearley/product/app"
-	"github.com/daveearley/product/app/account"
-	"github.com/daveearley/product/app/event"
+	"github.com/daveearley/product/app/accounts"
+	"github.com/daveearley/product/app/events"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
 // BindAndAuthorize handles checking authorization, 404s and binding IDs to models for use down the line
-// todo move this logic into a service + tidy
-func BindAndAuthorize(eventService event.Service, accountService account.Service) gin.HandlerFunc {
+// Todo move this logic into a service + tidy
+func BindAndAuthorize(eventService events.Service, accountService accounts.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		for _, v := range c.Params {
 			switch v.Key {
 			case "event_id":
 				id := getID(&v)
-				e, err := eventService.Find(id)
+				event, err := eventService.Find(id)
 
 				if err != nil {
 					c.AbortWithStatus(http.StatusNotFound)
 					return
 				}
 
-				if e.AccountID != app.GetUserFromContext(c).AccountID {
+				if event.AccountID != app.GetUserFromContext(c).AccountID {
 					c.AbortWithStatus(http.StatusUnauthorized)
 				}
 
-				c.Set("event", e)
+				c.Set("event", event)
 				break
 			case "account_id":
 				id := getID(&v)
-				a, err := accountService.Find(id)
+				account, err := accountService.Find(id)
 
 				if err != nil {
 					c.AbortWithStatus(http.StatusNotFound)
 					return
 				}
 
-				if a.ID != app.GetUserFromContext(c).AccountID {
+				if account.ID != app.GetUserFromContext(c).AccountID {
 					c.AbortWithStatus(http.StatusForbidden)
 					return
 				}
-				c.Set("account", a)
+				c.Set("account", account)
 				break
 			}
 		}

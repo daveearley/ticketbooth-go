@@ -1,7 +1,7 @@
-package ticket
+package tickets
 
 import (
-	"github.com/daveearley/product/app/event"
+	"github.com/daveearley/product/app/events"
 	"github.com/daveearley/product/app/models/generated"
 	"github.com/daveearley/product/app/request"
 	"github.com/daveearley/product/app/response"
@@ -11,10 +11,10 @@ import (
 
 type controller struct {
 	ticketSrv Service
-	eventSrv  event.Service
+	eventSrv  events.Service
 }
 
-func NewController(ticketSrv Service, eventSrv event.Service) *controller {
+func NewController(ticketSrv Service, eventSrv events.Service) *controller {
 	return &controller{ticketSrv, eventSrv}
 }
 

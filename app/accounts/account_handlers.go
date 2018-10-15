@@ -1,4 +1,4 @@
-package account
+package accounts
 
 import (
 	"github.com/daveearley/product/app/request"

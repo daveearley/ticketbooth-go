@@ -1,7 +1,7 @@
-package ticket
+package tickets
 
 import (
-	"github.com/daveearley/product/app/attribute"
+	"github.com/daveearley/product/app/attributes"
 	"github.com/daveearley/product/app/models/generated"
 	"github.com/daveearley/product/app/pagination"
 	"github.com/daveearley/product/app/request"
@@ -46,7 +46,7 @@ func (s *service) Create(req request.CreateTicket, event *models.Event) (*models
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(ticket, attribute.MapToAttributes(&req.Attributes))
+		s.er.SetAttributes(ticket, attributes.MapToAttributes(&req.Attributes))
 	}
 
 	return ticket, nil

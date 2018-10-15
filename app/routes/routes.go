@@ -2,13 +2,13 @@ package routes
 
 import (
 	"database/sql"
-	"github.com/daveearley/product/app/account"
+	"github.com/daveearley/product/app/accounts"
 	"github.com/daveearley/product/app/auth"
-	"github.com/daveearley/product/app/event"
+	"github.com/daveearley/product/app/events"
 	"github.com/daveearley/product/app/middleware"
 	"github.com/daveearley/product/app/response"
-	"github.com/daveearley/product/app/ticket"
-	"github.com/daveearley/product/app/user"
+	"github.com/daveearley/product/app/tickets"
+	"github.com/daveearley/product/app/users"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,19 +20,19 @@ func Register(server *gin.Engine, db *sql.DB) {
 	})
 
 	// Repos
-	userRepo := user.NewRepository(db)
+	userRepo := users.NewRepository(db)
 
 	// Services
-	authService := auth.NewService(user.NewRepository(db))
-	eventService := event.NewService(event.NewRepository(db))
-	ticketService := ticket.NewService(ticket.NewRepository(db))
-	accountService := account.NewService(account.NewRepository(db), userRepo)
+	authService := auth.NewService(users.NewRepository(db))
+	eventService := events.NewService(events.NewRepository(db))
+	ticketService := tickets.NewService(tickets.NewRepository(db))
+	accountService := accounts.NewService(accounts.NewRepository(db), userRepo)
 
 	// Controllers
 	authController := auth.NewController(authService)
-	ticketController := ticket.NewController(ticketService, eventService)
-	eventController := event.NewController(eventService)
-	accountController := account.NewController(accountService)
+	ticketController := tickets.NewController(ticketService, eventService)
+	eventController := events.NewController(eventService)
+	accountController := accounts.NewController(accountService)
 
 	server.POST("/login", authController.Login)
 

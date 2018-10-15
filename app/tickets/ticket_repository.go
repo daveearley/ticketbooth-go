@@ -1,4 +1,4 @@
-package ticket
+package tickets
 
 import (
 	"database/sql"

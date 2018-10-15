@@ -1,4 +1,4 @@
-package attribute
+package attributes
 
 import (
 	"encoding/json"

@@ -1,7 +1,7 @@
-package event
+package events
 
 import (
-	"github.com/daveearley/product/app/attribute"
+	"github.com/daveearley/product/app/attributes"
 	"github.com/daveearley/product/app/models/generated"
 	"github.com/daveearley/product/app/pagination"
 	"github.com/daveearley/product/app/request"
@@ -47,7 +47,7 @@ func (s *service) Create(req request.CreateEvent, user *models.User) (*models.Ev
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(event, attribute.MapToAttributes(&req.Attributes))
+		s.er.SetAttributes(event, attributes.MapToAttributes(&req.Attributes))
 	}
 
 	return event, nil
