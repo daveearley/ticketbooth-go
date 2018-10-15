@@ -57,7 +57,6 @@ func (ec *controller) GetEvents(c *gin.Context) {
 	paginationParams := pagination.Params{}
 
 	if err := c.ShouldBindQuery(&paginationParams); err != nil {
-		fmt.Println(err.Error())
 		response.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
