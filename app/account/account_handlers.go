@@ -1,10 +1,8 @@
 package account
 
 import (
-	"github.com/daveearley/product/app"
 	"github.com/daveearley/product/app/request"
 	"github.com/daveearley/product/app/response"
-	"github.com/daveearley/product/app/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -18,17 +16,7 @@ func NewController(as Service) *controller {
 }
 
 func (ac *controller) GetById(c *gin.Context) {
-	account, err := ac.srv.Find(utils.Str2int(c.Param("id")))
-
-	if !app.IsUserAuthorized(c, account) {
-		response.Unauthorized(c)
-		return
-	}
-
-	if err != nil {
-		response.NotFoundResponse(c)
-		return
-	}
+	account, _ := c.Get("account")
 
 	response.JsonResponse(c, account)
 }

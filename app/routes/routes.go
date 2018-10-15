@@ -38,15 +38,16 @@ func Register(server *gin.Engine, db *sql.DB) {
 
 	apiGroup := server.Group("/v1")
 	{
-		apiGroup.Use(api.JwtMiddleware(userRepo))
+		apiGroup.Use(middleware.JwtMiddleware(userRepo))
+		apiGroup.Use(middleware.BindAndAuthorize(eventService, accountService))
 
 		// Account routes
-		apiGroup.POST("/account", accountController.CreateAccount)
-		apiGroup.GET("account/:id", accountController.GetById)
+		apiGroup.POST("/accounts", accountController.CreateAccount)
+		apiGroup.GET("/accounts/:account_id", accountController.GetById)
 
 		// Event routes
 		apiGroup.POST("/events", eventController.CreateEvent)
-		apiGroup.GET("/events/:id", eventController.GetById)
+		apiGroup.GET("/events/:event_id", eventController.GetById)
 		apiGroup.GET("/events", eventController.GetEvents)
 		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
 	}
