@@ -14,6 +14,9 @@ import (
 
 // Register handles all DI and creation of routes
 func Register(server *gin.Engine, db *sql.DB) {
+	// Error handing middleware
+	//server.Use(middleware.ErrorHandler())
+
 	// Health Check
 	server.GET("/healthcheck", func(context *gin.Context) {
 		response.StringResponse(context, "")
