@@ -4,7 +4,7 @@ import (
 	dotenv "github.com/joho/godotenv"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 )
 
 type Config struct {
@@ -37,6 +37,7 @@ func LoadConfig() *Config {
 		DbHost:     getEnv("DB_HOST", true),
 		DbPort:     getEnv("DB_PORT", true),
 		DbUser:     getEnv("DB_USER", true),
+		DbDriver:   getEnv("DB_DRIVER", true),
 		JwtSecret:  getEnv("JWT_SECRET", true),
 	}
 }
@@ -52,9 +53,11 @@ func getEnv(envName string, required bool) string {
 }
 
 func castBool(bool string) bool {
-	if strings.ToLower(bool) == "true" {
-		return true
+	parsedBool, err := strconv.ParseBool(bool)
+
+	if err != nil {
+		log.Fatal(bool + " cannot be cast to a bool")
 	}
 
-	return false
+	return parsedBool
 }
