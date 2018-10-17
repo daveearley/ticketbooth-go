@@ -14,6 +14,7 @@ var TableNames = struct {
 	EventQuestions           string
 	Events                   string
 	QuestionAnswers          string
+	QuestionOptions          string
 	Questions                string
 	TicketAttributes         string
 	TicketQuestions          string
@@ -34,6 +35,7 @@ var TableNames = struct {
 	EventQuestions:           "event_questions",
 	Events:                   "events",
 	QuestionAnswers:          "question_answers",
+	QuestionOptions:          "question_options",
 	Questions:                "questions",
 	TicketAttributes:         "ticket_attributes",
 	TicketQuestions:          "ticket_questions",

@@ -1,7 +1,6 @@
 package events
 
 import (
-	"fmt"
 	"github.com/daveearley/product/app"
 	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/api/request"

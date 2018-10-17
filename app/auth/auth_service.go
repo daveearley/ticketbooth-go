@@ -5,8 +5,8 @@ import (
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/users"
 	"github.com/daveearley/product/app/utils"
+	"github.com/daveearley/product/configs"
 	"github.com/dgrijalva/jwt-go"
-	"os"
 	"time"
 )
 
@@ -15,11 +15,12 @@ type Service interface {
 }
 
 type service struct {
-	ur users.Repository
+	ur     users.Repository
+	config *configs.Config
 }
 
-func NewService(r users.Repository) *service {
-	return &service{r}
+func NewService(r users.Repository, c *configs.Config) Service {
+	return &service{r, c}
 }
 
 // ValidateLoginAndReturnJwtToken accepts returns a JWT token when a valid email/password combo is passed
@@ -34,7 +35,7 @@ func (s *service) ValidateLoginAndReturnJwtToken(req *request.Login) (string, er
 		return "", errors.New("incorrect password")
 	}
 
-	mySigningKey := []byte(os.Getenv("JWT_SECRET"))
+	mySigningKey := []byte(s.config.JwtSecret)
 
 	type jwtClaims struct {
 		UserId    int `json:"user_id"`

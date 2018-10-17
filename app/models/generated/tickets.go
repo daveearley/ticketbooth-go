@@ -789,7 +789,7 @@ func (ticketL) LoadQuestions(e boil.Executor, singular bool, maybeTicket interfa
 		one := new(Question)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.Title, &one.Type, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Title, &one.Type, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.Required, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for questions")
 		}

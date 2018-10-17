@@ -27,6 +27,7 @@ type Question struct {
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	Required  bool      `boil:"required" json:"required" toml:"required" yaml:"required"`
 
 	R *questionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L questionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,6 +40,7 @@ var QuestionColumns = struct {
 	CreatedAt string
 	UpdatedAt string
 	DeletedAt string
+	Required  string
 }{
 	ID:        "id",
 	Title:     "title",
@@ -46,16 +48,19 @@ var QuestionColumns = struct {
 	CreatedAt: "created_at",
 	UpdatedAt: "updated_at",
 	DeletedAt: "deleted_at",
+	Required:  "required",
 }
 
 // QuestionRels is where relationship names are stored.
 var QuestionRels = struct {
 	Events          string
 	QuestionAnswers string
+	QuestionOptions string
 	Tickets         string
 }{
 	Events:          "Events",
 	QuestionAnswers: "QuestionAnswers",
+	QuestionOptions: "QuestionOptions",
 	Tickets:         "Tickets",
 }
 
@@ -63,6 +68,7 @@ var QuestionRels = struct {
 type questionR struct {
 	Events          EventSlice
 	QuestionAnswers QuestionAnswerSlice
+	QuestionOptions QuestionOptionSlice
 	Tickets         TicketSlice
 }
 
@@ -75,9 +81,9 @@ func (*questionR) NewStruct() *questionR {
 type questionL struct{}
 
 var (
-	questionColumns               = []string{"id", "title", "type", "created_at", "updated_at", "deleted_at"}
+	questionColumns               = []string{"id", "title", "type", "created_at", "updated_at", "deleted_at", "required"}
 	questionColumnsWithoutDefault = []string{"title", "type", "created_at", "updated_at", "deleted_at"}
-	questionColumnsWithDefault    = []string{"id"}
+	questionColumnsWithDefault    = []string{"id", "required"}
 	questionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -359,6 +365,27 @@ func (o *Question) QuestionAnswers(mods ...qm.QueryMod) questionAnswerQuery {
 	return query
 }
 
+// QuestionOptions retrieves all the question_option's QuestionOptions with an executor.
+func (o *Question) QuestionOptions(mods ...qm.QueryMod) questionOptionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"question_options\".\"question_id\"=?", o.ID),
+	)
+
+	query := QuestionOptions(queryMods...)
+	queries.SetFrom(query.Query, "\"question_options\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"question_options\".*"})
+	}
+
+	return query
+}
+
 // Tickets retrieves all the ticket's Tickets with an executor.
 func (o *Question) Tickets(mods ...qm.QueryMod) ticketQuery {
 	var queryMods []qm.QueryMod
@@ -573,6 +600,97 @@ func (questionL) LoadQuestionAnswers(e boil.Executor, singular bool, maybeQuesti
 				local.R.QuestionAnswers = append(local.R.QuestionAnswers, foreign)
 				if foreign.R == nil {
 					foreign.R = &questionAnswerR{}
+				}
+				foreign.R.Question = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadQuestionOptions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (questionL) LoadQuestionOptions(e boil.Executor, singular bool, maybeQuestion interface{}, mods queries.Applicator) error {
+	var slice []*Question
+	var object *Question
+
+	if singular {
+		object = maybeQuestion.(*Question)
+	} else {
+		slice = *maybeQuestion.(*[]*Question)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &questionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &questionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`question_options`), qm.WhereIn(`question_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load question_options")
+	}
+
+	var resultSlice []*QuestionOption
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice question_options")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on question_options")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for question_options")
+	}
+
+	if len(questionOptionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.QuestionOptions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &questionOptionR{}
+			}
+			foreign.R.Question = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.QuestionID {
+				local.R.QuestionOptions = append(local.R.QuestionOptions, foreign)
+				if foreign.R == nil {
+					foreign.R = &questionOptionR{}
 				}
 				foreign.R.Question = local
 				break
@@ -878,6 +996,59 @@ func (o *Question) AddQuestionAnswers(exec boil.Executor, insert bool, related .
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &questionAnswerR{
+				Question: o,
+			}
+		} else {
+			rel.R.Question = o
+		}
+	}
+	return nil
+}
+
+// AddQuestionOptions adds the given related objects to the existing relationships
+// of the question, optionally inserting them as new records.
+// Appends related to o.R.QuestionOptions.
+// Sets related.R.Question appropriately.
+func (o *Question) AddQuestionOptions(exec boil.Executor, insert bool, related ...*QuestionOption) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.QuestionID = o.ID
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"question_options\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"question_id"}),
+				strmangle.WhereClause("\"", "\"", 2, questionOptionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.QuestionID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &questionR{
+			QuestionOptions: related,
+		}
+	} else {
+		o.R.QuestionOptions = append(o.R.QuestionOptions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &questionOptionR{
 				Question: o,
 			}
 		} else {

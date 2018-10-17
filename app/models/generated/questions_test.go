@@ -643,6 +643,84 @@ func testQuestionToManyQuestionAnswers(t *testing.T) {
 	}
 }
 
+func testQuestionToManyQuestionOptions(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Question
+	var b, c QuestionOption
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, questionDBTypes, true, questionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Question struct: %s", err)
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, questionOptionDBTypes, false, questionOptionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, questionOptionDBTypes, false, questionOptionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.QuestionID = a.ID
+	c.QuestionID = a.ID
+
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	questionOption, err := a.QuestionOptions().All(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range questionOption {
+		if v.QuestionID == b.QuestionID {
+			bFound = true
+		}
+		if v.QuestionID == c.QuestionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := QuestionSlice{&a}
+	if err = a.L.LoadQuestionOptions(tx, false, (*[]*Question)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.QuestionOptions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.QuestionOptions = nil
+	if err = a.L.LoadQuestionOptions(tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.QuestionOptions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", questionOption)
+	}
+}
+
 func testQuestionToManyTickets(t *testing.T) {
 	var err error
 
@@ -1026,6 +1104,80 @@ func testQuestionToManyAddOpQuestionAnswers(t *testing.T) {
 		}
 	}
 }
+func testQuestionToManyAddOpQuestionOptions(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Question
+	var b, c, d, e QuestionOption
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, questionDBTypes, false, strmangle.SetComplement(questionPrimaryKeyColumns, questionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*QuestionOption{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, questionOptionDBTypes, false, strmangle.SetComplement(questionOptionPrimaryKeyColumns, questionOptionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*QuestionOption{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddQuestionOptions(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.QuestionID {
+			t.Error("foreign key was wrong value", a.ID, first.QuestionID)
+		}
+		if a.ID != second.QuestionID {
+			t.Error("foreign key was wrong value", a.ID, second.QuestionID)
+		}
+
+		if first.R.Question != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Question != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.QuestionOptions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.QuestionOptions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.QuestionOptions().Count(tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testQuestionToManyAddOpTickets(t *testing.T) {
 	var err error
 
@@ -1322,7 +1474,7 @@ func testQuestionsSelect(t *testing.T) {
 }
 
 var (
-	questionDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `ID`: `integer`, `Title`: `text`, `Type`: `character varying`, `UpdatedAt`: `timestamp without time zone`}
+	questionDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `ID`: `integer`, `Required`: `boolean`, `Title`: `text`, `Type`: `enum.question_types('CHECKBOX','RADIO','TEXT','WAIVER')`, `UpdatedAt`: `timestamp without time zone`}
 	_               = bytes.MinRead
 )
 

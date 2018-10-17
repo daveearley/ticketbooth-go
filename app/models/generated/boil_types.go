@@ -75,3 +75,11 @@ const (
 const (
 	EventStatusACTIVE = "ACTIVE"
 )
+
+// Enum values for question_types
+const (
+	QuestionTypesCHECKBOX = "CHECKBOX"
+	QuestionTypesRADIO    = "RADIO"
+	QuestionTypesTEXT     = "TEXT"
+	QuestionTypesWAIVER   = "WAIVER"
+)

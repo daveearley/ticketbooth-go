@@ -16,7 +16,7 @@ type repository struct {
 	db *sql.DB
 }
 
-func NewRepository(conn *sql.DB) *repository {
+func NewRepository(conn *sql.DB) Repository {
 	return &repository{conn}
 }
 

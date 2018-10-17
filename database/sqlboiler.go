@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"github.com/daveearley/product/app/models"
 	"github.com/daveearley/product/app/utils"
+	"github.com/daveearley/product/configs"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"os"
 )
 
-func InitDb() *sql.DB {
+func InitDb(config *configs.Config) *sql.DB {
 	dbStr := fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
+		config.DbUser,
+		config.DbPassword,
+		config.DbName,
 	)
 
-	db, err := sql.Open("postgres", dbStr)
+	db, err := sql.Open(config.DbDriver, dbStr)
 	utils.CheckErr(err)
 
 	models.RegisterHooks()

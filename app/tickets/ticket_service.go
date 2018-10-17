@@ -18,7 +18,7 @@ type service struct {
 	er Repository
 }
 
-func NewService(repository Repository) *service {
+func NewService(repository Repository) Service {
 	return &service{repository}
 }
 
