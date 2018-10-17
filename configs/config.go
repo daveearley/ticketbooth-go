@@ -22,8 +22,8 @@ type Config struct {
 	JwtSecret string `json:"jwt_secret"`
 }
 
-// LoadConfig reads config values from the environment and return a Config struct. If there is a .env in the
-// project route then this will be loaded also. Environment variables get priority over .env values
+// LoadConfig reads config values from the environment and returns a Config struct. If there is a .env in the
+// project root this will be loaded also. Environment variables get priority over .env values
 func LoadConfig() *Config {
 
 	dotenv.Load()
