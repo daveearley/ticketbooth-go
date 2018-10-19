@@ -9,20 +9,20 @@ import (
 
 const unauthorizedMessage string = "This action is unauthorized"
 
-func CreatedResponse(c *gin.Context, model interface{}) {
+func Created(c *gin.Context, model interface{}) {
 	c.JSON(http.StatusCreated, &model)
 }
 
-func ErrorResponse(c *gin.Context, statusCode int, err error) {
+func Error(c *gin.Context, statusCode int, err error) {
 	c.Error(err)
-	c.JSON(statusCode, gin.H{
+	c.AbortWithStatusJSON(statusCode, gin.H{
 		"error": err.Error(),
 	})
 }
 
 func Unauthorized(c *gin.Context) {
 	c.Error(errors.New(unauthorizedMessage))
-	c.JSON(http.StatusForbidden, gin.H{
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 		"error": unauthorizedMessage,
 	})
 }
@@ -31,7 +31,7 @@ func NotFoundResponse(c *gin.Context) {
 	c.AbortWithStatus(http.StatusNotFound)
 }
 
-func JsonResponse(c *gin.Context, json interface{}) {
+func JSON(c *gin.Context, json interface{}) {
 	c.JSON(http.StatusOK, json)
 }
 

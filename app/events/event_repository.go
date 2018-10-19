@@ -9,7 +9,8 @@ import (
 )
 
 type Repository interface {
-	GetById(id int) (*models.Event, error)
+	GetByID(id int) (*models.Event, error)
+	GetByTicketID(id int) (*models.Event, error)
 	Store(event *models.Event) (*models.Event, error)
 	SetAttributes(event *models.Event, attr []*models.Attribute) error
 	List(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
@@ -23,8 +24,18 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) GetById(id int) (*models.Event, error) {
+func (r *repository) GetByID(id int) (*models.Event, error) {
 	event, err := models.FindEvent(r.db, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
+}
+
+func (r *repository) GetByTicketID(id int) (*models.Event, error) {
+	event, err := models.Events(qm.Where("ticket_id=?", id)).One(r.db)
 
 	if err != nil {
 		return nil, err

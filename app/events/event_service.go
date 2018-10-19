@@ -23,7 +23,7 @@ func NewService(repository Repository) Service {
 }
 
 func (s *service) Find(id int) (*models.Event, error) {
-	event, err := s.er.GetById(id)
+	event, err := s.er.GetByID(id)
 
 	if err != nil {
 		return nil, err

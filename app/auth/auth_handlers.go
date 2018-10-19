@@ -18,18 +18,18 @@ func NewController(srv Service) *controller {
 func (ac *controller) Login(c *gin.Context) {
 	var credentials *request.Login
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest, err)
+		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
 
 	token, err := ac.srv.ValidateLoginAndReturnJwtToken(credentials)
 
 	if err != nil {
-		response.ErrorResponse(c, http.StatusForbidden, err)
+		response.Error(c, http.StatusForbidden, err)
 		return
 	}
 
-	response.JsonResponse(c, gin.H{
+	response.JSON(c, gin.H{
 		"token": token,
 	})
 }

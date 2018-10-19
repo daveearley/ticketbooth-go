@@ -18,23 +18,23 @@ func NewController(as Service) *controller {
 func (ac *controller) GetById(c *gin.Context) {
 	account, _ := c.Get("account")
 
-	response.JsonResponse(c, account)
+	response.JSON(c, account)
 }
 
 func (ac *controller) CreateAccount(c *gin.Context) {
 	createRequest := request.CreateAccount{}
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest, err)
+		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
 
 	account, err := ac.srv.Create(&createRequest)
 
 	if err != nil {
-		response.ErrorResponse(c, http.StatusInternalServerError, err)
+		response.Error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.CreatedResponse(c, account)
+	response.Created(c, account)
 	return
 }

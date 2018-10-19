@@ -16,21 +16,24 @@ import (
 // Register handles all DI and creation of routes
 func Register(server *gin.Engine, db *sql.DB, config *configs.Config) {
 	// Error handing middleware
-	//server.Use(middleware.ErrorHandler())
+	server.Use(middleware.ErrorHandler())
 
 	// Health Check
 	server.GET("/healthcheck", func(context *gin.Context) {
 		response.StringResponse(context, "")
 	})
 
-	// Repos
+	// Repositories
 	userRepo := users.NewRepository(db)
+	eventRepo := events.NewRepository(db)
+	ticketRepo := tickets.NewRepository(db)
+	accountRepo := accounts.NewRepository(db)
 
 	// Services
-	authService := auth.NewService(users.NewRepository(db), config)
-	eventService := events.NewService(events.NewRepository(db))
-	ticketService := tickets.NewService(tickets.NewRepository(db))
-	accountService := accounts.NewService(accounts.NewRepository(db), userRepo)
+	authService := auth.NewService(userRepo, config)
+	eventService := events.NewService(eventRepo)
+	ticketService := tickets.NewService(ticketRepo)
+	accountService := accounts.NewService(accountRepo, userRepo)
 
 	// Controllers
 	authController := auth.NewController(authService)
@@ -43,7 +46,8 @@ func Register(server *gin.Engine, db *sql.DB, config *configs.Config) {
 	apiGroup := server.Group("/v1")
 	{
 		apiGroup.Use(middleware.JwtMiddleware(userRepo, config))
-		apiGroup.Use(middleware.BindAndAuthorize(eventService, accountService))
+		apiGroup.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
+		apiGroup.Use(middleware.AuthorizeActions())
 
 		// Account routes
 		apiGroup.POST("/accounts", accountController.CreateAccount)
@@ -56,7 +60,7 @@ func Register(server *gin.Engine, db *sql.DB, config *configs.Config) {
 
 		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
 		apiGroup.GET("/events/:event_id/tickets", ticketController.CreateTicket)
-		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.CreateTicket)
+		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetById)
 
 		apiGroup.POST("/events/:event_id/questions", ticketController.CreateTicket)
 		apiGroup.GET("/events/:event_id/questions", ticketController.CreateTicket)
