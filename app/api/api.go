@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Register handles all DI and creation of routes
+// Register routes, handlers all DI
 func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.Config) {
 	// Error handing middleware
 	server.Use(middleware.ErrorHandler())
@@ -56,10 +56,10 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		// Event routes
 		apiGroup.POST("/events", eventController.CreateEvent)
 		apiGroup.GET("/events/:event_id", eventController.GetById)
-		apiGroup.GET("/events", eventController.GetEvents)
+		apiGroup.GET("/events", eventController.GetAll)
 
 		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
-		apiGroup.GET("/events/:event_id/tickets", ticketController.CreateTicket)
+		apiGroup.GET("/events/:event_id/tickets", ticketController.GetAll)
 		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetById)
 
 		apiGroup.POST("/events/:event_id/questions", ticketController.CreateTicket)

@@ -4,8 +4,12 @@ import (
 	"strings"
 )
 
-const defaultPaginationLimit = 20
-const defaultOffset = 0
+const (
+	defaultPaginationLimit = 20
+	defaultOrderBy         = "id_desc"
+	defaultPage            = 1
+	defaultOffset          = 0
+)
 
 // Params stores pagination request information.
 // todo: ideally switch to cursor pagination
@@ -17,6 +21,14 @@ type Params struct {
 	ResultCount      int    `json:"result_count,omitempty"`
 }
 
+func NewParams() *Params {
+	return &Params{
+		Page:    defaultPage,
+		OrderBy: defaultOrderBy,
+		PerPage: defaultPaginationLimit,
+	}
+}
+
 func (p *Params) GetOrderByDirection() string {
 	dir := strings.Split(p.OrderBy, "_")[1]
 	p.OrderByDirection = dir
@@ -25,10 +37,6 @@ func (p *Params) GetOrderByDirection() string {
 }
 
 func (p *Params) GetOrderBy() string {
-	if p.OrderBy == "" {
-		p.OrderBy = "id_desc"
-	}
-
 	return strings.Split(p.OrderBy, "_")[0]
 }
 
@@ -41,9 +49,5 @@ func (p *Params) GetOffset() int {
 }
 
 func (p *Params) GetLimit() int {
-	if p.PerPage == 0 {
-		p.PerPage = defaultPaginationLimit
-	}
-
 	return p.PerPage
 }

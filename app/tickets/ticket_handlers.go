@@ -1,6 +1,7 @@
 package tickets
 
 import (
+	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/api/response"
 	"github.com/daveearley/product/app/events"
@@ -42,4 +43,23 @@ func (ec *controller) CreateTicket(c *gin.Context) {
 	}
 
 	response.Created(c, ticket)
+}
+
+func (ec *controller) GetAll(c *gin.Context) {
+	paginationParams := pagination.NewParams()
+
+	if err := c.ShouldBindQuery(paginationParams); err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	event, _ := c.Get("event")
+	tix, err := ec.srv.List(paginationParams, event.(*models.Event))
+
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Paginated(c, paginationParams, tix)
 }

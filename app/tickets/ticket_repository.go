@@ -12,7 +12,7 @@ type Repository interface {
 	GetById(id int) (*models.Ticket, error)
 	Store(event *models.Ticket) (*models.Ticket, error)
 	SetAttributes(event *models.Ticket, attr []*models.Attribute) error
-	List(p *pagination.Params, authUser *models.User) ([]*models.Ticket, error)
+	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
 
 type repository struct {
@@ -45,9 +45,10 @@ func (r *repository) SetAttributes(ticket *models.Ticket, attr []*models.Attribu
 	return ticket.SetAttributes(r.db, true, attr...)
 }
 
-func (r *repository) List(p *pagination.Params, authUser *models.User) ([]*models.Ticket, error) {
-	queryMods := pagination.QueryMods(p, authUser)
+func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
+	queryMods := pagination.QueryMods(p)
 	queryMods = append(queryMods, qm.Load("Attributes"))
+	queryMods = append(queryMods, qm.Where("event_id=?", event.ID))
 
 	events, err := models.Tickets(queryMods...).All(r.db)
 

@@ -46,20 +46,20 @@ func (ec *controller) CreateEvent(c *gin.Context) {
 	response.Created(c, event)
 }
 
-func (ec *controller) GetEvents(c *gin.Context) {
-	paginationParams := pagination.Params{}
+func (ec *controller) GetAll(c *gin.Context) {
+	paginationParams := pagination.NewParams()
 
-	if err := c.ShouldBindQuery(&paginationParams); err != nil {
+	if err := c.ShouldBindQuery(paginationParams); err != nil {
 		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
 
-	events, err := ec.srv.List(&paginationParams, app.GetUserFromContext(c))
+	events, err := ec.srv.List(paginationParams, app.GetUserFromContext(c))
 
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Paginated(c, &paginationParams, TransformMany(events))
+	response.Paginated(c, paginationParams, TransformMany(events))
 }

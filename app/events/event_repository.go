@@ -57,8 +57,9 @@ func (r *repository) SetAttributes(event *models.Event, attr []*models.Attribute
 }
 
 func (r *repository) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
-	queryMods := pagination.QueryMods(p, authUser)
+	queryMods := pagination.QueryMods(p)
 	queryMods = append(queryMods, qm.Load("Attributes"))
+	queryMods = append(queryMods, qm.Where("account_id=?", authUser.AccountID))
 
 	events, err := models.Events(queryMods...).All(r.db)
 

@@ -11,7 +11,7 @@ import (
 type Service interface {
 	Find(id int) (*models.Ticket, error)
 	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
-	List(p *pagination.Params, authUser *models.User) ([]*models.Ticket, error)
+	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
 
 type service struct {
@@ -52,8 +52,8 @@ func (s *service) Create(req request.CreateTicket, event *models.Event) (*models
 	return ticket, nil
 }
 
-func (s *service) List(p *pagination.Params, authUser *models.User) ([]*models.Ticket, error) {
-	tickets, err := s.er.List(p, authUser)
+func (s *service) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
+	tickets, err := s.er.List(p, event)
 
 	if err != nil {
 		return nil, err
