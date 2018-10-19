@@ -1,4 +1,4 @@
-package models
+package hooks
 
 import (
 	"github.com/daveearley/product/app/models/generated"
@@ -14,6 +14,6 @@ func userInsertHook(executor boil.Executor, u *models.User) error {
 	return nil
 }
 
-func RegisterHooks() {
+func Register() {
 	models.AddUserHook(boil.BeforeInsertHook, userInsertHook)
 }
