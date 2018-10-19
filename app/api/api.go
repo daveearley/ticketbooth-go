@@ -1,4 +1,4 @@
-package routes
+package api
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 )
 
 // Register handles all DI and creation of routes
-func Register(server *gin.Engine, db *sql.DB, config *configs.Config) {
+func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.Config) {
 	// Error handing middleware
 	server.Use(middleware.ErrorHandler())
 
