@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	Find(id int) (*models.Ticket, error)
+	Delete(id int) error
 	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
@@ -24,13 +25,19 @@ func NewService(repository Repository) Service {
 }
 
 func (s *service) Find(id int) (*models.Ticket, error) {
-	ticket, err := s.er.GetById(id)
+	ticket, err := s.er.GetByID(id)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return ticket, nil
+}
+
+func (s *service) Delete(id int) error {
+	err := s.er.DeleteByID(id)
+
+	return err
 }
 
 func (s *service) Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error) {

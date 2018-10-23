@@ -19,10 +19,23 @@ func NewController(ticketSrv Service, eventSrv events.Service) *controller {
 	return &controller{ticketSrv, eventSrv}
 }
 
-func (ec *controller) GetById(c *gin.Context) {
+func (ec *controller) GetByID(c *gin.Context) {
 	ticket, _ := c.Get("ticket")
 
 	response.JSON(c, ticket)
+}
+
+func (ec *controller) DeleteByID(c *gin.Context) {
+	ticket, _ := c.Get("ticket")
+
+	err := ec.srv.Delete(ticket.(*models.Ticket).ID)
+
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.NoContent(c)
 }
 
 func (ec *controller) CreateTicket(c *gin.Context) {

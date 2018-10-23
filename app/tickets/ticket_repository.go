@@ -9,7 +9,8 @@ import (
 )
 
 type Repository interface {
-	GetById(id int) (*models.Ticket, error)
+	GetByID(id int) (*models.Ticket, error)
+	DeleteByID(id int) error
 	Store(event *models.Ticket) (*models.Ticket, error)
 	SetAttributes(event *models.Ticket, attr []*models.Attribute) error
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
@@ -23,7 +24,7 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) GetById(id int) (*models.Ticket, error) {
+func (r *repository) GetByID(id int) (*models.Ticket, error) {
 	event, err := models.FindTicket(r.db, id)
 
 	if err != nil {
@@ -31,6 +32,18 @@ func (r *repository) GetById(id int) (*models.Ticket, error) {
 	}
 
 	return event, nil
+}
+
+func (r *repository) DeleteByID(id int) error {
+	ticket, err := models.FindTicket(r.db, id)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = ticket.Delete(r.db)
+
+	return err
 }
 
 func (r *repository) Store(ticket *models.Ticket) (*models.Ticket, error) {

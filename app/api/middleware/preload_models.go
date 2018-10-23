@@ -24,7 +24,7 @@ func PreloadModels(
 			fmt.Println(v.Key)
 			switch v.Key {
 			case "ticket_id":
-				ticket, err := ticketRepo.GetById(id)
+				ticket, err := ticketRepo.GetByID(id)
 
 				if err != nil {
 					response.NotFoundResponse(c)
