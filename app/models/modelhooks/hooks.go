@@ -1,4 +1,4 @@
-package hooks
+package modelhooks
 
 import (
 	"github.com/daveearley/product/app/models/generated"

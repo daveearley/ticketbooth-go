@@ -57,13 +57,14 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiGroup.POST("/events", eventController.CreateEvent)
 		apiGroup.GET("/events/:event_id", eventController.GetById)
 		apiGroup.GET("/events", eventController.GetAll)
+		apiGroup.DELETE("/events/:event_id", eventController.DeleteEvent)
 
 		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
 		apiGroup.GET("/events/:event_id/tickets", ticketController.GetAll)
 		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetById)
 
-		apiGroup.POST("/events/:event_id/questions", ticketController.CreateTicket)
-		apiGroup.GET("/events/:event_id/questions", ticketController.CreateTicket)
-		apiGroup.GET("/events/:event_id/questions/:question_id", ticketController.CreateTicket)
+		apiGroup.POST("/events/:event_id/questions", ticketController.CreateTicket)             //CreateQuestion
+		apiGroup.GET("/events/:event_id/questions", ticketController.CreateTicket)              //GetQuestion
+		apiGroup.GET("/events/:event_id/questions/:question_id", ticketController.CreateTicket) //Paginate
 	}
 }

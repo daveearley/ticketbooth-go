@@ -1,6 +1,7 @@
 package tickets
 
 import (
+	"github.com/daveearley/product/app"
 	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/attributes"
@@ -33,13 +34,17 @@ func (s *service) Find(id int) (*models.Ticket, error) {
 }
 
 func (s *service) Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error) {
-	ticket, err := s.er.Store(&models.Ticket{
+	ticket := &models.Ticket{
 		Title:                    req.Title,
 		SaleStartDate:            null.NewTime(req.SaleStartDate, true),
 		SaleEndDate:              null.NewTime(req.SaleEndDate, true),
 		IntitalQuantityAvailable: req.Quantity,
 		EventID:                  event.ID,
-	})
+	}
+
+	app.BeforeSaveTicket(ticket)
+
+	ticket, err := s.er.Store(ticket)
 
 	if err != nil {
 		return nil, err

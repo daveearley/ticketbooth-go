@@ -5,6 +5,7 @@ import (
 	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/api/response"
+	"github.com/daveearley/product/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -26,6 +27,22 @@ func (ec *controller) GetById(c *gin.Context) {
 	}
 
 	response.JSON(c, event)
+}
+
+func (ec *controller) DeleteEvent(c *gin.Context) {
+	event, exists := c.Get("event")
+
+	if !exists {
+		response.NotFoundResponse(c)
+		return
+	}
+
+	if err := ec.srv.Delete(event.(*models.Event).ID); err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.NoContent(c)
 }
 
 func (ec *controller) CreateEvent(c *gin.Context) {

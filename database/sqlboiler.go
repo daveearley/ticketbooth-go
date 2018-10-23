@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/daveearley/product/app/models/hooks"
+	"github.com/daveearley/product/app/models/modelhooks"
 	"github.com/daveearley/product/app/utils"
 	"github.com/daveearley/product/configs"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -20,7 +20,7 @@ func InitDb(config *configs.Config) *sql.DB {
 	db, err := sql.Open(config.DbDriver, dbStr)
 	utils.CheckErr(err)
 
-	hooks.Register()
+	modelhooks.Register()
 
 	return db
 }

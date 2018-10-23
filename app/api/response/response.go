@@ -9,6 +9,10 @@ import (
 
 const unauthorizedMessage string = "This action is unauthorized"
 
+func NoContent(c *gin.Context) {
+	c.String(http.StatusNoContent, "")
+}
+
 func Created(c *gin.Context, model interface{}) {
 	c.JSON(http.StatusCreated, &model)
 }

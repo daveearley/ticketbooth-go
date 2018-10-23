@@ -11,6 +11,7 @@ import (
 type Service interface {
 	Find(id int) (*models.Event, error)
 	Create(event request.CreateEvent, user *models.User) (*models.Event, error)
+	Delete(id int) error
 	List(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
 }
 
@@ -20,6 +21,12 @@ type service struct {
 
 func NewService(repository Repository) Service {
 	return &service{repository}
+}
+
+func (s *service) Delete(id int) error {
+	err := s.er.DeleteByID(id)
+
+	return err
 }
 
 func (s *service) Find(id int) (*models.Event, error) {

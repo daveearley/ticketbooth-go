@@ -14,6 +14,7 @@ type Repository interface {
 	Store(event *models.Event) (*models.Event, error)
 	SetAttributes(event *models.Event, attr []*models.Attribute) error
 	List(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
+	DeleteByID(id int) error
 }
 
 type repository struct {
@@ -32,6 +33,22 @@ func (r *repository) GetByID(id int) (*models.Event, error) {
 	}
 
 	return event, nil
+}
+
+func (r *repository) DeleteByID(id int) error {
+	event, err := r.GetByID(id)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = event.Delete(r.db)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *repository) GetByTicketID(id int) (*models.Event, error) {
