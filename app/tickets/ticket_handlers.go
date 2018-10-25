@@ -22,7 +22,7 @@ func NewController(ticketSrv Service, eventSrv events.Service) *controller {
 func (ec *controller) GetByID(c *gin.Context) {
 	ticket, _ := c.Get("ticket")
 
-	response.JSON(c, ticket)
+	response.JSON(c, TransformOne(ticket.(*models.Ticket)))
 }
 
 func (ec *controller) DeleteByID(c *gin.Context) {
@@ -55,7 +55,7 @@ func (ec *controller) CreateTicket(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, ticket)
+	response.Created(c, TransformOne(ticket))
 }
 
 func (ec *controller) GetAll(c *gin.Context) {
@@ -74,5 +74,33 @@ func (ec *controller) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, tix)
+	response.Paginated(c, paginationParams, TransformMany(tix))
+}
+
+func (ec *controller) AddQuestion(c *gin.Context) {
+	createRequest := request.CreateQuestion{}
+
+	ticket, _ := c.Get("ticket")
+
+	if err := c.ShouldBindJSON(&createRequest); err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+
+	_, err := ec.srv.CreateQuestion(createRequest, ticket.(*models.Ticket))
+
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Created(c, TransformOne(ticket.(*models.Ticket)))
+}
+
+func (ec *controller) GetQuestionByID(c *gin.Context) {
+
+}
+
+func (ec *controller) GetQuestions(c *gin.Context) {
+
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/daveearley/product/app/api/response"
 	"github.com/daveearley/product/app/auth"
 	"github.com/daveearley/product/app/events"
+	"github.com/daveearley/product/app/questions"
 	"github.com/daveearley/product/app/tickets"
 	"github.com/daveearley/product/app/users"
 	"github.com/daveearley/product/configs"
@@ -28,11 +29,12 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	eventRepo := events.NewRepository(db)
 	ticketRepo := tickets.NewRepository(db)
 	accountRepo := accounts.NewRepository(db)
+	questionRepo := questions.NewRepository(db)
 
 	// Services
 	authService := auth.NewService(userRepo, config)
 	eventService := events.NewService(eventRepo)
-	ticketService := tickets.NewService(ticketRepo)
+	ticketService := tickets.NewService(ticketRepo, questionRepo)
 	accountService := accounts.NewService(accountRepo, userRepo)
 
 	// Controllers
@@ -64,8 +66,8 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetByID)
 		apiGroup.DELETE("/events/:event_id/tickets/:ticket_id", ticketController.DeleteByID)
 
-		apiGroup.POST("/events/:event_id/questions", ticketController.CreateTicket)             //CreateQuestion
-		apiGroup.GET("/events/:event_id/questions", ticketController.CreateTicket)              //GetQuestion
-		apiGroup.GET("/events/:event_id/questions/:question_id", ticketController.CreateTicket) //Paginate
+		apiGroup.POST("/tickets/:ticket_id/questions", ticketController.AddQuestion)                 //CreateQuestion
+		apiGroup.GET("/tickets/:ticket_id/questions", ticketController.GetQuestions)                 //GetQuestion
+		apiGroup.GET("/tickets/:ticket_id/questions/:question_id", ticketController.GetQuestionByID) //Paginate
 	}
 }

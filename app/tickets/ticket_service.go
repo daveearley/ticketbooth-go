@@ -6,6 +6,7 @@ import (
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/attributes"
 	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/product/app/questions"
 	"github.com/volatiletech/null"
 )
 
@@ -13,15 +14,17 @@ type Service interface {
 	Find(id int) (*models.Ticket, error)
 	Delete(id int) error
 	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
+	CreateQuestion(req request.CreateQuestion, ticket *models.Ticket) (*models.Question, error)
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
 
 type service struct {
 	er Repository
+	qr questions.Repository
 }
 
-func NewService(repository Repository) Service {
-	return &service{repository}
+func NewService(repository Repository, qRepository questions.Repository) Service {
+	return &service{repository, qRepository}
 }
 
 func (s *service) Find(id int) (*models.Ticket, error) {
@@ -62,6 +65,33 @@ func (s *service) Create(req request.CreateTicket, event *models.Event) (*models
 	}
 
 	return ticket, nil
+}
+
+func (s *service) CreateQuestion(req request.CreateQuestion, ticket *models.Ticket) (*models.Question, error) {
+	question := &models.Question{
+		Title:    req.Title,
+		Type:     req.Type,
+		Required: req.Required,
+	}
+
+	err := s.er.SetQuestion(ticket, question)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var opts []*models.QuestionOption
+	for _, v := range req.Options {
+		opts = append(opts, &models.QuestionOption{
+			Title: v.Title,
+		})
+	}
+
+	if err = s.qr.SetQuestionOptions(question, opts); err != nil {
+		return nil, err
+	}
+
+	return question, nil
 }
 
 func (s *service) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {

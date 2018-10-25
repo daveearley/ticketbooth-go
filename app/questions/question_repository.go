@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"github.com/daveearley/product/app/api/pagination"
 	"github.com/daveearley/product/app/models/generated"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 type Repository interface {
 	GetById(id int) (*models.Question, error)
-	StoreTicketQuestion(question *models.Question, ticket *models.Ticket) (*models.Question, error)
-	StoreEventQuestion(event *models.Question) (*models.Question, error)
+	Store(question *models.Question) (*models.Question, error)
 	List(p *pagination.Params, event *models.Event) ([]*models.Question, error)
+	SetQuestionOptions(question *models.Question, opts []*models.QuestionOption) error
 }
 
 type repository struct {
@@ -21,7 +22,24 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db}
 }
 
-func (r *Repository) GetByID(id int) (*models.Question, error) {
-	question := models.FindQ
+func (r *repository) GetById(id int) (*models.Question, error) {
+	panic("implement me")
+}
 
+func (r *repository) Store(question *models.Question) (*models.Question, error) {
+	err := question.Insert(r.db, boil.Infer())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return question, nil
+}
+
+func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.Question, error) {
+	panic("implement me")
+}
+
+func (r *repository) SetQuestionOptions(question *models.Question, opts []*models.QuestionOption) error {
+	return question.AddQuestionOptions(r.db, true, opts...)
 }

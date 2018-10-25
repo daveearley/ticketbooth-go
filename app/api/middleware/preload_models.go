@@ -25,14 +25,27 @@ func PreloadModels(
 			switch v.Key {
 			case "ticket_id":
 				ticket, err := ticketRepo.GetByID(id)
+				if err != nil {
+					response.NotFoundResponse(c)
+					return
+				}
+
+				event, err := eventRepo.GetByID(ticket.EventID)
 
 				if err != nil {
 					response.NotFoundResponse(c)
 					return
 				}
+
 				c.Set("ticket", ticket)
+				c.Set("event", event)
 				break
 			case "event_id":
+
+				if _, exists := c.Get("event"); exists {
+					continue
+				}
+
 				event, err := eventRepo.GetByID(id)
 
 				if err != nil {

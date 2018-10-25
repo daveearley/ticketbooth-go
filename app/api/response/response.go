@@ -14,7 +14,7 @@ func NoContent(c *gin.Context) {
 }
 
 func Created(c *gin.Context, model interface{}) {
-	c.JSON(http.StatusCreated, &model)
+	c.JSON(http.StatusCreated, data(&model))
 }
 
 func Error(c *gin.Context, statusCode int, err error) {
@@ -36,7 +36,7 @@ func NotFoundResponse(c *gin.Context) {
 }
 
 func JSON(c *gin.Context, json interface{}) {
-	c.JSON(http.StatusOK, json)
+	c.JSON(http.StatusOK, data(&json))
 }
 
 func Paginated(c *gin.Context, p *pagination.Params, json interface{}) {
@@ -49,4 +49,10 @@ func Paginated(c *gin.Context, p *pagination.Params, json interface{}) {
 
 func StringResponse(c *gin.Context, string string) {
 	c.String(http.StatusOK, string)
+}
+
+func data(d *interface{}) *gin.H {
+	return &gin.H{
+		"data": d,
+	}
 }

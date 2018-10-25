@@ -13,6 +13,7 @@ type Repository interface {
 	DeleteByID(id int) error
 	Store(event *models.Ticket) (*models.Ticket, error)
 	SetAttributes(event *models.Ticket, attr []*models.Attribute) error
+	SetQuestion(ticket *models.Ticket, question *models.Question) error
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
 
@@ -56,6 +57,10 @@ func (r *repository) Store(ticket *models.Ticket) (*models.Ticket, error) {
 
 func (r *repository) SetAttributes(ticket *models.Ticket, attr []*models.Attribute) error {
 	return ticket.SetAttributes(r.db, true, attr...)
+}
+
+func (r *repository) SetQuestion(ticket *models.Ticket, question *models.Question) error {
+	return ticket.AddQuestions(r.db, true, question)
 }
 
 func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
