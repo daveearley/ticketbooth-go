@@ -76,3 +76,7 @@ func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.
 
 	return events, nil
 }
+
+func (r *repository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
+	questions, error := ticket.Questions()
+}

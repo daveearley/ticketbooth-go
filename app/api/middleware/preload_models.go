@@ -55,7 +55,7 @@ func PreloadModels(
 				c.Set("event", event)
 				break
 			case "account_id":
-				account, err := accountRepo.GetById(id)
+				account, err := accountRepo.GetByID(id)
 
 				if err != nil {
 					response.NotFoundResponse(c)

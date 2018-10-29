@@ -45,30 +45,45 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 
 	server.POST("/login", authController.Login)
 
-	apiGroup := server.Group("/v1")
+	apiAuthGroup := server.Group("/v1")
 	{
-		apiGroup.Use(middleware.JwtMiddleware(userRepo, config))
-		apiGroup.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
-		apiGroup.Use(middleware.AuthorizeActions())
-		apiGroup.Use(middleware.DbTransaction(db))
+		apiAuthGroup.Use(middleware.JwtMiddleware(userRepo, config))
+		apiAuthGroup.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
+		apiAuthGroup.Use(middleware.AuthorizeActions())
+		apiAuthGroup.Use(middleware.DbTransaction(db))
 
 		// Account routes
-		apiGroup.POST("/accounts", accountController.CreateAccount)
-		apiGroup.GET("/accounts/:account_id", accountController.GetById)
+		apiAuthGroup.POST("/accounts", accountController.CreateAccount)
+		apiAuthGroup.GET("/accounts/:account_id", accountController.GetById)
+		apiAuthGroup.DELETE("/accounts/:account_id", accountController.Delete)
 
 		// Event routes
-		apiGroup.POST("/events", eventController.CreateEvent)
-		apiGroup.GET("/events/:event_id", eventController.GetById)
-		apiGroup.GET("/events", eventController.GetAll)
-		apiGroup.DELETE("/events/:event_id", eventController.DeleteEvent)
+		apiAuthGroup.POST("/events", eventController.CreateEvent)
+		apiAuthGroup.GET("/events/:event_id", eventController.GetById)
+		apiAuthGroup.GET("/events", eventController.GetAll)
+		apiAuthGroup.DELETE("/events/:event_id", eventController.DeleteEvent)
 
-		apiGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
-		apiGroup.GET("/events/:event_id/tickets", ticketController.GetAll)
-		apiGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetByID)
-		apiGroup.DELETE("/events/:event_id/tickets/:ticket_id", ticketController.DeleteByID)
+		// Attendees
 
-		apiGroup.POST("/tickets/:ticket_id/questions", ticketController.AddQuestion)                 //CreateQuestion
-		apiGroup.GET("/tickets/:ticket_id/questions", ticketController.GetQuestions)                 //GetQuestion
-		apiGroup.GET("/tickets/:ticket_id/questions/:question_id", ticketController.GetQuestionByID) //Paginate
+		// Tickets
+		apiAuthGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
+		apiAuthGroup.GET("/events/:event_id/tickets", ticketController.GetAll)
+		apiAuthGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetByID)
+		apiAuthGroup.DELETE("/events/:event_id/tickets/:ticket_id", ticketController.DeleteByID)
+		apiAuthGroup.POST("/tickets/:ticket_id/questions", ticketController.AddQuestion)
+
+		// Transactions
+		// 1.
+
+	}
+
+	apiPublicGroup := server.Group("/v1/public")
+	{
+		apiPublicGroup.GET("/events/:event_id")
+
+		// 1. GET get event & tickets in single request
+		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time
+		// 3. POST transaction/:transaction_id with order/ticket/payment info
+		// 4. done?
 	}
 }

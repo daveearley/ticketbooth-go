@@ -96,11 +96,3 @@ func (ec *controller) AddQuestion(c *gin.Context) {
 
 	response.Created(c, TransformOne(ticket.(*models.Ticket)))
 }
-
-func (ec *controller) GetQuestionByID(c *gin.Context) {
-
-}
-
-func (ec *controller) GetQuestions(c *gin.Context) {
-
-}

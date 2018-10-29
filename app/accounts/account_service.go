@@ -22,7 +22,7 @@ func NewService(ar Repository, ur users.Repository) Service {
 }
 
 func (s *service) Find(id int) (*models.Account, error) {
-	return s.ar.GetById(id)
+	return s.ar.GetByID(id)
 }
 
 func (s *service) Create(request *request.CreateAccount) (*models.Account, error) {
@@ -50,5 +50,5 @@ func (s *service) Create(request *request.CreateAccount) (*models.Account, error
 }
 
 func (s *service) Delete(account *models.Account) error {
-	return nil
+	return s.ar.DeleteByID(account.ID)
 }

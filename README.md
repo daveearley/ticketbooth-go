@@ -6,5 +6,6 @@
  - standardize responses
  - logging
  - create questions/answers
+ - update method names to be consistent 
  
  

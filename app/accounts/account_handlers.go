@@ -3,6 +3,7 @@ package accounts
 import (
 	"github.com/daveearley/product/app/api/request"
 	"github.com/daveearley/product/app/api/response"
+	"github.com/daveearley/product/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -21,6 +22,19 @@ func (ac *controller) GetById(c *gin.Context) {
 	response.JSON(c, account)
 }
 
+func (ac *controller) Delete(c *gin.Context) {
+	account, _ := c.Get("account")
+
+	err := ac.srv.Delete(account.(*models.Account))
+
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.NoContent(c)
+}
+
 func (ac *controller) CreateAccount(c *gin.Context) {
 	createRequest := request.CreateAccount{}
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
@@ -36,5 +50,4 @@ func (ac *controller) CreateAccount(c *gin.Context) {
 	}
 
 	response.Created(c, account)
-	return
 }
