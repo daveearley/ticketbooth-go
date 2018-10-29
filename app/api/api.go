@@ -64,6 +64,11 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiAuthGroup.DELETE("/events/:event_id", eventController.DeleteEvent)
 
 		// Attendees
+		// Create
+		// GetAll
+		// GetByID
+		// Delete
+		//
 
 		// Tickets
 		apiAuthGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
@@ -73,7 +78,10 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiAuthGroup.POST("/tickets/:ticket_id/questions", ticketController.AddQuestion)
 
 		// Transactions
-		// 1.
+		// GetAll
+		// Delete
+		// Create
+		// GetOne
 
 	}
 
