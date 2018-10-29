@@ -15,6 +15,7 @@ type Repository interface {
 	SetAttributes(event *models.Ticket, attr []*models.Attribute) error
 	SetQuestion(ticket *models.Ticket, question *models.Question) error
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
+	ListQuestions(ticket *models.Ticket) ([]*models.Question, error)
 }
 
 type repository struct {
@@ -78,5 +79,11 @@ func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.
 }
 
 func (r *repository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
-	questions, error := ticket.Questions()
+	questions, err := ticket.Questions().All(r.db)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return questions, nil
 }
