@@ -26,7 +26,7 @@ func NewRepository(db *sql.DB) *repository {
 }
 
 func (r *repository) GetByID(id int) (*models.Event, error) {
-	event, err := models.Events(qm.Load("Attributes"), qm.Where("id=?", id)).One(r.db)
+	event, err := models.Events(qm.Load("Tickets"), qm.Load("Attributes"), qm.Where("id=?", id)).One(r.db)
 
 	if err != nil {
 		return nil, err

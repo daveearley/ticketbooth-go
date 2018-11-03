@@ -1,8 +1,11 @@
 package events
 
 import (
-	"fmt"
+	"github.com/daveearley/ticketbooth/app/attributes"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/gin-gonic/gin"
+	"github.com/volatiletech/null"
+	"time"
 )
 
 type Response struct {
@@ -10,18 +13,37 @@ type Response struct {
 	Attributes []*models.Attribute `json:"attributes"`
 }
 
-func TransformOne(e *models.Event) Response {
+type ResponsePublic struct {
+	Title       string      `json:"title"`
+	StartDate   time.Time   `json:"start_date"`
+	EndDate     time.Time   `json:"end_date"`
+	Description null.String `json:"description"`
 
-	fmt.Println(e)
-
-	return Response{e, e.R.Attributes}
+	Attributes []*attributes.Response `json:"attributes"`
+	Tickets    []*models.Ticket       `json:"tickets"`
 }
 
-func TransformMany(events []*models.Event) []Response {
-	var transformedEvents []Response
-	for _, v := range events {
-		transformedEvents = append(transformedEvents, TransformOne(v))
+func TransformOne(c *gin.Context, event *models.Event) interface{} {
+	if _, exists := c.Get("auth_user"); exists {
+		return &Response{event, event.R.Attributes}
 	}
 
-	return transformedEvents
+	return &ResponsePublic{
+		Title:       event.Title,
+		StartDate:   event.StartDate,
+		EndDate:     event.EndDate,
+		Description: event.Description,
+		Attributes:  attributes.TransformMany(c, event.R.Attributes),
+		Tickets:     event.R.Tickets,
+	}
+}
+
+func TransformMany(c *gin.Context, events []*models.Event) interface{} {
+	var transformedEvents []interface{}
+
+	for _, v := range events {
+		transformedEvents = append(transformedEvents, TransformOne(c, v))
+	}
+
+	return &transformedEvents
 }

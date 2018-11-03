@@ -26,7 +26,7 @@ func (ec *controller) GetById(c *gin.Context) {
 		return
 	}
 
-	response.JSON(c, TransformOne(event.(*models.Event)))
+	response.JSON(c, TransformOne(c, event.(*models.Event)))
 }
 
 func (ec *controller) DeleteEvent(c *gin.Context) {
@@ -60,7 +60,7 @@ func (ec *controller) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, TransformOne(event))
+	response.Created(c, TransformOne(c, event))
 }
 
 func (ec *controller) GetAll(c *gin.Context) {
@@ -78,5 +78,5 @@ func (ec *controller) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, TransformMany(events))
+	response.Paginated(c, paginationParams, TransformMany(c, events))
 }

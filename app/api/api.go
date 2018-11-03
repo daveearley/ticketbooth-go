@@ -45,12 +45,13 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 
 	server.POST("/login", authController.Login)
 
+	server.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
+	server.Use(middleware.DbTransaction(db))
+
 	apiAuthGroup := server.Group("/v1")
 	{
 		apiAuthGroup.Use(middleware.JwtMiddleware(userRepo, config))
-		apiAuthGroup.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
 		apiAuthGroup.Use(middleware.AuthorizeActions())
-		apiAuthGroup.Use(middleware.DbTransaction(db))
 
 		// Account routes
 		apiAuthGroup.POST("/accounts", accountController.CreateAccount)
