@@ -3,9 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/daveearley/product/app/models/modelhooks"
-	"github.com/daveearley/product/app/utils"
-	"github.com/daveearley/product/configs"
+	"github.com/daveearley/ticketbooth/app/models/modelhooks"
+	"github.com/daveearley/ticketbooth/app/utils"
+	"github.com/daveearley/ticketbooth/configs"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 

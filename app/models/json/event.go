@@ -1,6 +1,6 @@
 package jsonmodel
 
-import "github.com/daveearley/product/app/models/generated"
+import "github.com/daveearley/ticketbooth/app/models/generated"
 
 type Event struct {
 	*models.Event

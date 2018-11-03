@@ -2,8 +2,8 @@ package events
 
 import (
 	"database/sql"
-	"github.com/daveearley/product/app/api/pagination"
-	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/api/pagination"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -21,12 +21,12 @@ type repository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(db *sql.DB) *repository {
 	return &repository{db}
 }
 
 func (r *repository) GetByID(id int) (*models.Event, error) {
-	event, err := models.FindEvent(r.db, id)
+	event, err := models.Events(qm.Load("Attributes"), qm.Where("id=?", id)).One(r.db)
 
 	if err != nil {
 		return nil, err

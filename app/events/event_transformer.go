@@ -1,6 +1,9 @@
 package events
 
-import "github.com/daveearley/product/app/models/generated"
+import (
+	"fmt"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+)
 
 type Response struct {
 	*models.Event
@@ -8,6 +11,9 @@ type Response struct {
 }
 
 func TransformOne(e *models.Event) Response {
+
+	fmt.Println(e)
+
 	return Response{e, e.R.Attributes}
 }
 

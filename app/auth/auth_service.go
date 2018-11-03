@@ -2,10 +2,10 @@ package auth
 
 import (
 	"errors"
-	"github.com/daveearley/product/app/api/request"
-	"github.com/daveearley/product/app/users"
-	"github.com/daveearley/product/app/utils"
-	"github.com/daveearley/product/configs"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/app/utils"
+	"github.com/daveearley/ticketbooth/configs"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )

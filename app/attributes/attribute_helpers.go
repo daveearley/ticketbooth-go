@@ -3,7 +3,7 @@ package attributes
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"reflect"
 )
 

@@ -2,7 +2,7 @@ package response
 
 import (
 	"errors"
-	"github.com/daveearley/product/app/api/pagination"
+	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

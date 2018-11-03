@@ -2,15 +2,15 @@ package api
 
 import (
 	"database/sql"
-	"github.com/daveearley/product/app/accounts"
-	"github.com/daveearley/product/app/api/middleware"
-	"github.com/daveearley/product/app/api/response"
-	"github.com/daveearley/product/app/auth"
-	"github.com/daveearley/product/app/events"
-	"github.com/daveearley/product/app/questions"
-	"github.com/daveearley/product/app/tickets"
-	"github.com/daveearley/product/app/users"
-	"github.com/daveearley/product/configs"
+	"github.com/daveearley/ticketbooth/app/accounts"
+	"github.com/daveearley/ticketbooth/app/api/middleware"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/auth"
+	"github.com/daveearley/ticketbooth/app/events"
+	"github.com/daveearley/ticketbooth/app/questions"
+	"github.com/daveearley/ticketbooth/app/tickets"
+	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/configs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -87,7 +87,7 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 
 	apiPublicGroup := server.Group("/v1/public")
 	{
-		apiPublicGroup.GET("/events/:event_id")
+		apiPublicGroup.GET("/events/:event_id", eventController.GetById)
 
 		// 1. GET get event & tickets in single request
 		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time

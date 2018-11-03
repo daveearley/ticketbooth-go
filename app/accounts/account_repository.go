@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"database/sql"
-	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

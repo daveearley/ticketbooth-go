@@ -1,11 +1,11 @@
 package events
 
 import (
-	"github.com/daveearley/product/app"
-	"github.com/daveearley/product/app/api/pagination"
-	"github.com/daveearley/product/app/api/request"
-	"github.com/daveearley/product/app/api/response"
-	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/pagination"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -26,7 +26,7 @@ func (ec *controller) GetById(c *gin.Context) {
 		return
 	}
 
-	response.JSON(c, event)
+	response.JSON(c, TransformOne(event.(*models.Event)))
 }
 
 func (ec *controller) DeleteEvent(c *gin.Context) {
@@ -60,7 +60,7 @@ func (ec *controller) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, event)
+	response.Created(c, TransformOne(event))
 }
 
 func (ec *controller) GetAll(c *gin.Context) {

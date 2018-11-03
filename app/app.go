@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/daveearley/product/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"log"
 )

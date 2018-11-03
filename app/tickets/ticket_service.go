@@ -1,12 +1,12 @@
 package tickets
 
 import (
-	"github.com/daveearley/product/app"
-	"github.com/daveearley/product/app/api/pagination"
-	"github.com/daveearley/product/app/api/request"
-	"github.com/daveearley/product/app/attributes"
-	"github.com/daveearley/product/app/models/generated"
-	"github.com/daveearley/product/app/questions"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/pagination"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/attributes"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/questions"
 	"github.com/volatiletech/null"
 )
 

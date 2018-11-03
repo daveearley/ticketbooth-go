@@ -1,6 +1,6 @@
 package questions
 
-import "github.com/daveearley/product/app/models/generated"
+import "github.com/daveearley/ticketbooth/app/models/generated"
 
 type Response struct {
 	*models.Question

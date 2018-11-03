@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/daveearley/product/app/accounts"
-	"github.com/daveearley/product/app/api/response"
-	"github.com/daveearley/product/app/events"
-	"github.com/daveearley/product/app/tickets"
+	"github.com/daveearley/ticketbooth/app/accounts"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/events"
+	"github.com/daveearley/ticketbooth/app/tickets"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"net/http"

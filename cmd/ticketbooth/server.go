@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/daveearley/product/app/api"
-	"github.com/daveearley/product/configs"
-	"github.com/daveearley/product/database"
+	"github.com/daveearley/ticketbooth/app/api"
+	"github.com/daveearley/ticketbooth/configs"
+	"github.com/daveearley/ticketbooth/database"
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/sqlboiler/boil"
 )

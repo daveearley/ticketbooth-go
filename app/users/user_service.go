@@ -1,6 +1,6 @@
 package users
 
-import "github.com/daveearley/product/app/models/generated"
+import "github.com/daveearley/ticketbooth/app/models/generated"
 
 type Service interface {
 	CreateUser(user *models.User) (*models.User, error)

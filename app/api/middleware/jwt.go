@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"errors"
-	"github.com/daveearley/product/app/users"
-	"github.com/daveearley/product/configs"
+	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/configs"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"

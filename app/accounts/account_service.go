@@ -1,9 +1,9 @@
 package accounts
 
 import (
-	"github.com/daveearley/product/app/api/request"
-	"github.com/daveearley/product/app/models/generated"
-	"github.com/daveearley/product/app/users"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/users"
 )
 
 type Service interface {

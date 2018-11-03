@@ -7,5 +7,6 @@
  - logging
  - create questions/answers
  - update method names to be consistent 
+ - make attribute private/public
  
  

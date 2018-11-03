@@ -1,8 +1,8 @@
 package tickets
 
 import (
-	"github.com/daveearley/product/app/models/generated"
-	"github.com/daveearley/product/app/questions"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/questions"
 )
 
 type Response struct {
