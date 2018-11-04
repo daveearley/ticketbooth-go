@@ -1,7 +1,7 @@
 package transformer
 
 type Envelope struct {
-	Data interface{} `json:"envelope"`
+	Data interface{} `json:"data"`
 }
 
 // envelope wraps data in a data JSON structure
