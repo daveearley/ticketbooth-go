@@ -9,18 +9,16 @@ import (
 
 type TicketResponse struct {
 	*models.Ticket
-	Questions []*QuestionResponse `json:"questions"`
+	Questions *Envelope `json:"questions"`
 }
 
 type PublicTicketResponse struct {
-	ID                int
-	Title             string
-	EventID           int
-	QuantityAvailable int
-	SaleStartDate     null.Time
-	SaleEndDate       null.Time
-
-	Questions []*QuestionResponse `json:"questions"`
+	ID                int       `json:"id"`
+	Title             string    `json:"title"`
+	EventID           int       `json:"event_id"`
+	QuantityAvailable int       `json:"quantity_available"`
+	SaleStartDate     null.Time `json:"sale_start_date"`
+	SaleEndDate       null.Time `json:"sale_end_date"`
 }
 
 func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
@@ -33,15 +31,14 @@ func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
 		Title:             t.Title,
 		EventID:           t.EventID,
 		QuantityAvailable: t.InititalQuantityAvailable,
-		Questions:         TransformQuestions(t.R.Questions),
 	}
 }
 
-func TransformTickets(c *gin.Context, tickets []*models.Ticket) interface{} {
+func TransformTickets(c *gin.Context, tickets []*models.Ticket) *Envelope {
 	var transformed []interface{}
 	for _, v := range tickets {
 		transformed = append(transformed, TransformTicket(c, v))
 	}
 
-	return &transformed
+	return envelope(transformed)
 }

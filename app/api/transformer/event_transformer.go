@@ -19,8 +19,8 @@ type PublicEventResponse struct {
 	EndDate     time.Time   `json:"end_date"`
 	Description null.String `json:"description"`
 
-	Attributes []*AttributeResponse `json:"attributes"`
-	Tickets    []*TicketResponse    `json:"tickets"`
+	Attributes *Envelope `json:"attributes"`
+	Tickets    *Envelope `json:"tickets"`
 }
 
 func TransformEvent(c *gin.Context, event *models.Event) interface{} {
@@ -34,16 +34,16 @@ func TransformEvent(c *gin.Context, event *models.Event) interface{} {
 		EndDate:     event.EndDate,
 		Description: event.Description,
 		Attributes:  TransformAttributes(c, event.R.Attributes),
-		Tickets:     TransformTickets(c, event.R.Tickets).([]*TicketResponse),
+		Tickets:     TransformTickets(c, event.R.Tickets),
 	}
 }
 
-func TransformEvents(c *gin.Context, events []*models.Event) interface{} {
+func TransformEvents(c *gin.Context, events []*models.Event) *Envelope {
 	var transformedEvents []interface{}
 
 	for _, v := range events {
 		transformedEvents = append(transformedEvents, TransformEvent(c, v))
 	}
 
-	return &transformedEvents
+	return envelope(transformedEvents)
 }
