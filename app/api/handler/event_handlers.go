@@ -1,24 +1,26 @@
-package events
+package handler
 
 import (
 	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/api/transformer"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type controller struct {
-	srv Service
+type eventHandlers struct {
+	srv service.EventService
 }
 
-func NewController(srv Service) *controller {
-	return &controller{srv}
+func NewEventHandlers(srv service.EventService) *eventHandlers {
+	return &eventHandlers{srv}
 }
 
-func (ec *controller) GetById(c *gin.Context) {
+func (ec *eventHandlers) GetById(c *gin.Context) {
 	event, exists := c.Get("event")
 
 	if !exists {
@@ -26,10 +28,10 @@ func (ec *controller) GetById(c *gin.Context) {
 		return
 	}
 
-	response.JSON(c, TransformOne(c, event.(*models.Event)))
+	response.JSON(c, transformer.TransformEvent(c, event.(*models.Event)))
 }
 
-func (ec *controller) DeleteEvent(c *gin.Context) {
+func (ec *eventHandlers) DeleteEvent(c *gin.Context) {
 	event, exists := c.Get("event")
 
 	if !exists {
@@ -45,7 +47,7 @@ func (ec *controller) DeleteEvent(c *gin.Context) {
 	response.NoContent(c)
 }
 
-func (ec *controller) CreateEvent(c *gin.Context) {
+func (ec *eventHandlers) CreateEvent(c *gin.Context) {
 	createRequest := request.CreateEvent{}
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
@@ -60,10 +62,10 @@ func (ec *controller) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, TransformOne(c, event))
+	response.Created(c, transformer.TransformEvent(c, event))
 }
 
-func (ec *controller) GetAll(c *gin.Context) {
+func (ec *eventHandlers) GetAll(c *gin.Context) {
 	paginationParams := pagination.NewParams()
 
 	if err := c.ShouldBindQuery(paginationParams); err != nil {
@@ -78,5 +80,5 @@ func (ec *controller) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, TransformMany(c, events))
+	response.Paginated(c, paginationParams, transformer.TransformEvents(c, events))
 }

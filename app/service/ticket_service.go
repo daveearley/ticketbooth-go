@@ -1,4 +1,4 @@
-package tickets
+package service
 
 import (
 	"github.com/daveearley/ticketbooth/app"
@@ -6,11 +6,11 @@ import (
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/attributes"
 	"github.com/daveearley/ticketbooth/app/models/generated"
-	"github.com/daveearley/ticketbooth/app/questions"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
 )
 
-type Service interface {
+type TicketService interface {
 	Find(id int) (*models.Ticket, error)
 	Delete(id int) error
 	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
@@ -18,16 +18,16 @@ type Service interface {
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 }
 
-type service struct {
-	er Repository
-	qr questions.Repository
+type ticketService struct {
+	er repository.TicketRepository
+	qr repository.QuestionRepository
 }
 
-func NewService(repository Repository, qRepository questions.Repository) Service {
-	return &service{repository, qRepository}
+func NewTicketService(repository repository.TicketRepository, qRepository repository.QuestionRepository) TicketService {
+	return &ticketService{repository, qRepository}
 }
 
-func (s *service) Find(id int) (*models.Ticket, error) {
+func (s *ticketService) Find(id int) (*models.Ticket, error) {
 	ticket, err := s.er.GetByID(id)
 
 	if err != nil {
@@ -37,19 +37,19 @@ func (s *service) Find(id int) (*models.Ticket, error) {
 	return ticket, nil
 }
 
-func (s *service) Delete(id int) error {
+func (s *ticketService) Delete(id int) error {
 	err := s.er.DeleteByID(id)
 
 	return err
 }
 
-func (s *service) Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error) {
+func (s *ticketService) Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error) {
 	ticket := &models.Ticket{
-		Title:                    req.Title,
-		SaleStartDate:            null.NewTime(req.SaleStartDate, true),
-		SaleEndDate:              null.NewTime(req.SaleEndDate, true),
-		IntitalQuantityAvailable: req.Quantity,
-		EventID:                  event.ID,
+		Title:                     req.Title,
+		SaleStartDate:             null.NewTime(req.SaleStartDate, true),
+		SaleEndDate:               null.NewTime(req.SaleEndDate, true),
+		InititalQuantityAvailable: req.Quantity,
+		EventID:                   event.ID,
 	}
 
 	app.BeforeSaveTicket(ticket)
@@ -67,7 +67,7 @@ func (s *service) Create(req request.CreateTicket, event *models.Event) (*models
 	return ticket, nil
 }
 
-func (s *service) CreateQuestion(req request.CreateQuestion, ticket *models.Ticket) (*models.Question, error) {
+func (s *ticketService) CreateQuestion(req request.CreateQuestion, ticket *models.Ticket) (*models.Question, error) {
 	question := &models.Question{
 		Title:    req.Title,
 		Type:     req.Type,
@@ -94,7 +94,7 @@ func (s *service) CreateQuestion(req request.CreateQuestion, ticket *models.Tick
 	return question, nil
 }
 
-func (s *service) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
+func (s *ticketService) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
 	tickets, err := s.er.List(p, event)
 
 	if err != nil {

@@ -1,21 +1,22 @@
-package auth
+package handler
 
 import (
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type controller struct {
-	srv Service
+type authHandlers struct {
+	srv service.AuthService
 }
 
-func NewController(srv Service) *controller {
-	return &controller{srv}
+func NewAuthHandlers(srv service.AuthService) *authHandlers {
+	return &authHandlers{srv}
 }
 
-func (ac *controller) Login(c *gin.Context) {
+func (ac *authHandlers) Login(c *gin.Context) {
 	var credentials *request.Login
 	if err := c.ShouldBindJSON(&credentials); err != nil {
 		response.Error(c, http.StatusBadRequest, err)

@@ -1,4 +1,4 @@
-package accounts
+package repository
 
 import (
 	"database/sql"
@@ -6,21 +6,21 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-type Repository interface {
+type AccountRepository interface {
 	GetByID(id int) (*models.Account, error)
 	Store(a *models.Account) (*models.Account, error)
 	DeleteByID(id int) error
 }
 
-type repository struct {
+type accountRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(conn *sql.DB) Repository {
-	return &repository{conn}
+func NewAccountRepository(conn *sql.DB) AccountRepository {
+	return &accountRepository{conn}
 }
 
-func (r *repository) GetByID(id int) (*models.Account, error) {
+func (r *accountRepository) GetByID(id int) (*models.Account, error) {
 	ac, err := models.FindAccount(r.db, id)
 
 	if err != nil {
@@ -30,7 +30,7 @@ func (r *repository) GetByID(id int) (*models.Account, error) {
 	return ac, nil
 }
 
-func (r *repository) Store(a *models.Account) (*models.Account, error) {
+func (r *accountRepository) Store(a *models.Account) (*models.Account, error) {
 	if err := a.Insert(r.db, boil.Infer()); err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (r *repository) Store(a *models.Account) (*models.Account, error) {
 	return a, nil
 }
 
-func (r *repository) DeleteByID(id int) error {
+func (r *accountRepository) DeleteByID(id int) error {
 	account, err := models.FindAccount(r.db, id)
 
 	if err != nil {

@@ -2,10 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/daveearley/ticketbooth/app/accounts"
 	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/events"
-	"github.com/daveearley/ticketbooth/app/tickets"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"net/http"
@@ -14,9 +12,9 @@ import (
 // PreloadModels binds parameter IDs to their models and sets them in context
 // Todo move this logic into a service + tidy
 func PreloadModels(
-	eventRepo events.Repository,
-	accountRepo accounts.Repository,
-	ticketRepo tickets.Repository,
+	eventRepo repository.EventRepository,
+	accountRepo repository.AccountRepository,
+	ticketRepo repository.TicketRepository,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		for _, v := range c.Params {

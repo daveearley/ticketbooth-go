@@ -2,14 +2,11 @@ package api
 
 import (
 	"database/sql"
-	"github.com/daveearley/ticketbooth/app/accounts"
+	"github.com/daveearley/ticketbooth/app/api/handler"
 	"github.com/daveearley/ticketbooth/app/api/middleware"
 	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/auth"
-	"github.com/daveearley/ticketbooth/app/events"
-	"github.com/daveearley/ticketbooth/app/questions"
-	"github.com/daveearley/ticketbooth/app/tickets"
-	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/app/repository"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/daveearley/ticketbooth/configs"
 	"github.com/gin-gonic/gin"
 )
@@ -25,23 +22,23 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	})
 
 	// Repositories
-	userRepo := users.NewRepository(db)
-	eventRepo := events.NewRepository(db)
-	ticketRepo := tickets.NewRepository(db)
-	accountRepo := accounts.NewRepository(db)
-	questionRepo := questions.NewRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	eventRepo := repository.NewEventRepository(db)
+	ticketRepo := repository.NewTicketRepository(db)
+	accountRepo := repository.NewAccountRepository(db)
+	questionRepo := repository.NewQuestionRepository(db)
 
 	// Services
-	authService := auth.NewService(userRepo, config)
-	eventService := events.NewService(eventRepo)
-	ticketService := tickets.NewService(ticketRepo, questionRepo)
-	accountService := accounts.NewService(accountRepo, userRepo)
+	authService := service.NewAuthService(userRepo, config)
+	eventService := service.NewEventService(eventRepo)
+	ticketService := service.NewTicketService(ticketRepo, questionRepo)
+	accountService := service.NewAccountService(accountRepo, userRepo)
 
 	// Controllers
-	authController := auth.NewController(authService)
-	ticketController := tickets.NewController(ticketService, eventService)
-	eventController := events.NewController(eventService)
-	accountController := accounts.NewController(accountService)
+	authController := handler.NewAuthHandlers(authService)
+	ticketController := handler.NewTicketHandlers(ticketService, eventService)
+	eventController := handler.NewEventHandlers(eventService)
+	accountController := handler.NewAccountHandlers(accountService)
 
 	server.POST("/login", authController.Login)
 

@@ -1,35 +1,36 @@
-package events
+package service
 
 import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/attributes"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
 )
 
-type Service interface {
+type EventService interface {
 	Find(id int) (*models.Event, error)
 	Create(event request.CreateEvent, user *models.User) (*models.Event, error)
 	Delete(id int) error
 	List(p *pagination.Params, authUser *models.User) ([]*models.Event, error)
 }
 
-type service struct {
-	er Repository
+type eventService struct {
+	er repository.EventRepository
 }
 
-func NewService(repository Repository) Service {
-	return &service{repository}
+func NewEventService(repository repository.EventRepository) *eventService {
+	return &eventService{repository}
 }
 
-func (s *service) Delete(id int) error {
+func (s *eventService) Delete(id int) error {
 	err := s.er.DeleteByID(id)
 
 	return err
 }
 
-func (s *service) Find(id int) (*models.Event, error) {
+func (s *eventService) Find(id int) (*models.Event, error) {
 	event, err := s.er.GetByID(id)
 
 	if err != nil {
@@ -39,7 +40,7 @@ func (s *service) Find(id int) (*models.Event, error) {
 	return event, nil
 }
 
-func (s *service) Create(req request.CreateEvent, user *models.User) (*models.Event, error) {
+func (s *eventService) Create(req request.CreateEvent, user *models.User) (*models.Event, error) {
 	event, err := s.er.Store(&models.Event{
 		Title:       req.Title,
 		Description: null.NewString(req.Description, true),
@@ -60,7 +61,7 @@ func (s *service) Create(req request.CreateEvent, user *models.User) (*models.Ev
 	return event, nil
 }
 
-func (s *service) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
+func (s *eventService) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
 	events, err := s.er.List(p, authUser)
 
 	if err != nil {

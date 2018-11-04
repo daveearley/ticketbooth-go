@@ -1,31 +1,32 @@
-package tickets
+package handler
 
 import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/events"
+	"github.com/daveearley/ticketbooth/app/api/transformer"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type controller struct {
-	srv      Service
-	eventSrv events.Service
+type ticketHandlers struct {
+	srv      service.TicketService
+	eventSrv service.EventService
 }
 
-func NewController(ticketSrv Service, eventSrv events.Service) *controller {
-	return &controller{ticketSrv, eventSrv}
+func NewTicketHandlers(ticketSrv service.TicketService, eventSrv service.EventService) *ticketHandlers {
+	return &ticketHandlers{ticketSrv, eventSrv}
 }
 
-func (ec *controller) GetByID(c *gin.Context) {
+func (ec *ticketHandlers) GetByID(c *gin.Context) {
 	ticket, _ := c.Get("ticket")
 
-	response.JSON(c, TransformOne(ticket.(*models.Ticket)))
+	response.JSON(c, transformer.TransformTicket(c, ticket.(*models.Ticket)))
 }
 
-func (ec *controller) DeleteByID(c *gin.Context) {
+func (ec *ticketHandlers) DeleteByID(c *gin.Context) {
 	ticket, _ := c.Get("ticket")
 
 	err := ec.srv.Delete(ticket.(*models.Ticket).ID)
@@ -38,7 +39,7 @@ func (ec *controller) DeleteByID(c *gin.Context) {
 	response.NoContent(c)
 }
 
-func (ec *controller) CreateTicket(c *gin.Context) {
+func (ec *ticketHandlers) CreateTicket(c *gin.Context) {
 	createRequest := request.CreateTicket{}
 
 	e, _ := c.Get("event")
@@ -55,10 +56,10 @@ func (ec *controller) CreateTicket(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, TransformOne(ticket))
+	response.Created(c, transformer.TransformTicket(c, ticket))
 }
 
-func (ec *controller) GetAll(c *gin.Context) {
+func (ec *ticketHandlers) GetAll(c *gin.Context) {
 	paginationParams := pagination.NewParams()
 
 	if err := c.ShouldBindQuery(paginationParams); err != nil {
@@ -74,10 +75,10 @@ func (ec *controller) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, TransformMany(tix))
+	response.Paginated(c, paginationParams, transformer.TransformTickets(c, tix))
 }
 
-func (ec *controller) AddQuestion(c *gin.Context) {
+func (ec *ticketHandlers) AddQuestion(c *gin.Context) {
 	createRequest := request.CreateQuestion{}
 
 	ticket, _ := c.Get("ticket")
@@ -94,5 +95,5 @@ func (ec *controller) AddQuestion(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, TransformOne(ticket.(*models.Ticket)))
+	response.Created(c, transformer.TransformTicket(c, ticket.(*models.Ticket)))
 }

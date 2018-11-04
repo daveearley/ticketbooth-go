@@ -1,23 +1,23 @@
-package accounts
+package service
 
 import (
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/models/generated"
-	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/app/repository"
 )
 
-type Service interface {
+type AccountService interface {
 	Find(id int) (*models.Account, error)
 	Create(request *request.CreateAccount) (*models.Account, error)
 	Delete(account *models.Account) error
 }
 
 type service struct {
-	ur users.Repository
-	ar Repository
+	ur repository.UserRepository
+	ar repository.AccountRepository
 }
 
-func NewService(ar Repository, ur users.Repository) Service {
+func NewAccountService(ar repository.AccountRepository, ur repository.UserRepository) AccountService {
 	return &service{ur, ar}
 }
 

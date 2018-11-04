@@ -1,20 +1,20 @@
-package attributes
+package transformer
 
 import (
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 )
 
-type Response struct {
+type AttributeResponse struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
-func TransformMany(c *gin.Context, attrs []*models.Attribute) []*Response {
-	var transformed []*Response
+func TransformAttributes(c *gin.Context, attrs []*models.Attribute) []*AttributeResponse {
+	var transformed []*AttributeResponse
 	for _, v := range attrs {
-		transformed = append(transformed, &Response{
+		transformed = append(transformed, &AttributeResponse{
 			ID:    v.ID,
 			Name:  v.Name,
 			Value: v.Value,

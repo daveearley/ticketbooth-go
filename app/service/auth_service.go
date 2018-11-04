@@ -1,30 +1,30 @@
-package auth
+package service
 
 import (
 	"errors"
 	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/users"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/daveearley/ticketbooth/app/utils"
 	"github.com/daveearley/ticketbooth/configs"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
 
-type Service interface {
+type AuthService interface {
 	ValidateLoginAndReturnJwtToken(req *request.Login) (string, error)
 }
 
-type service struct {
-	ur     users.Repository
+type userService struct {
+	ur     repository.UserRepository
 	config *configs.Config
 }
 
-func NewService(r users.Repository, c *configs.Config) Service {
-	return &service{r, c}
+func NewAuthService(r repository.UserRepository, c *configs.Config) AuthService {
+	return &userService{r, c}
 }
 
 // ValidateLoginAndReturnJwtToken accepts returns a JWT token when a valid email/password combo is passed
-func (s *service) ValidateLoginAndReturnJwtToken(req *request.Login) (string, error) {
+func (s *userService) ValidateLoginAndReturnJwtToken(req *request.Login) (string, error) {
 	u, err := s.ur.FindByEmail(req.Username)
 
 	if err != nil {

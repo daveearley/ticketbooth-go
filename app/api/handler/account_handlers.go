@@ -1,28 +1,29 @@
-package accounts
+package handler
 
 import (
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type controller struct {
-	srv Service
+type accountHandlers struct {
+	srv service.AccountService
 }
 
-func NewController(as Service) *controller {
-	return &controller{as}
+func NewAccountHandlers(as service.AccountService) *accountHandlers {
+	return &accountHandlers{as}
 }
 
-func (ac *controller) GetById(c *gin.Context) {
+func (ac *accountHandlers) GetById(c *gin.Context) {
 	account, _ := c.Get("account")
 
 	response.JSON(c, account)
 }
 
-func (ac *controller) Delete(c *gin.Context) {
+func (ac *accountHandlers) Delete(c *gin.Context) {
 	account, _ := c.Get("account")
 
 	err := ac.srv.Delete(account.(*models.Account))
@@ -35,7 +36,7 @@ func (ac *controller) Delete(c *gin.Context) {
 	response.NoContent(c)
 }
 
-func (ac *controller) CreateAccount(c *gin.Context) {
+func (ac *accountHandlers) CreateAccount(c *gin.Context) {
 	createRequest := request.CreateAccount{}
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
 		response.Error(c, http.StatusBadRequest, err)

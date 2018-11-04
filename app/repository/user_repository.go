@@ -1,4 +1,4 @@
-package users
+package repository
 
 import (
 	"database/sql"
@@ -7,21 +7,21 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-type Repository interface {
+type UserRepository interface {
 	GetById(id int) (*models.User, error)
 	FindByEmail(email string) (*models.User, error)
 	Store(a *models.User) (*models.User, error)
 }
 
-type repository struct {
+type userRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(conn *sql.DB) Repository {
-	return &repository{conn}
+func NewUserRepository(conn *sql.DB) UserRepository {
+	return &userRepository{conn}
 }
 
-func (r *repository) GetById(id int) (*models.User, error) {
+func (r *userRepository) GetById(id int) (*models.User, error) {
 	user, err := models.FindUser(r.db, id)
 
 	if err != nil {
@@ -31,7 +31,7 @@ func (r *repository) GetById(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (r *repository) FindByEmail(email string) (*models.User, error) {
+func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	user, err := models.Users(qm.Where("email=?", email)).One(r.db)
 
 	if err != nil {
@@ -41,7 +41,7 @@ func (r *repository) FindByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (r *repository) Store(a *models.User) (*models.User, error) {
+func (r *userRepository) Store(a *models.User) (*models.User, error) {
 	if err := a.Insert(r.db, boil.Infer()); err != nil {
 		return a, err
 	}

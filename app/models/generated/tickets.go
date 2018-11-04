@@ -22,43 +22,43 @@ import (
 
 // Ticket is an object representing the database table.
 type Ticket struct {
-	ID                       int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Title                    string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	EventID                  int       `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
-	IntitalQuantityAvailable int       `boil:"intital_quantity_available" json:"intital_quantity_available" toml:"intital_quantity_available" yaml:"intital_quantity_available"`
-	QuantitySold             int       `boil:"quantity_sold" json:"quantity_sold" toml:"quantity_sold" yaml:"quantity_sold"`
-	CreatedAt                time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt                time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt                time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
-	SaleStartDate            null.Time `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
-	SaleEndDate              null.Time `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
+	ID                        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Title                     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
+	EventID                   int       `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
+	InititalQuantityAvailable int       `boil:"initital_quantity_available" json:"initital_quantity_available" toml:"initital_quantity_available" yaml:"initital_quantity_available"`
+	QuantitySold              int       `boil:"quantity_sold" json:"quantity_sold" toml:"quantity_sold" yaml:"quantity_sold"`
+	CreatedAt                 time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt                 time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt                 time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	SaleStartDate             null.Time `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
+	SaleEndDate               null.Time `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var TicketColumns = struct {
-	ID                       string
-	Title                    string
-	EventID                  string
-	IntitalQuantityAvailable string
-	QuantitySold             string
-	CreatedAt                string
-	UpdatedAt                string
-	DeletedAt                string
-	SaleStartDate            string
-	SaleEndDate              string
+	ID                        string
+	Title                     string
+	EventID                   string
+	InititalQuantityAvailable string
+	QuantitySold              string
+	CreatedAt                 string
+	UpdatedAt                 string
+	DeletedAt                 string
+	SaleStartDate             string
+	SaleEndDate               string
 }{
-	ID:                       "id",
-	Title:                    "title",
-	EventID:                  "event_id",
-	IntitalQuantityAvailable: "intital_quantity_available",
-	QuantitySold:             "quantity_sold",
-	CreatedAt:                "created_at",
-	UpdatedAt:                "updated_at",
-	DeletedAt:                "deleted_at",
-	SaleStartDate:            "sale_start_date",
-	SaleEndDate:              "sale_end_date",
+	ID:                        "id",
+	Title:                     "title",
+	EventID:                   "event_id",
+	InititalQuantityAvailable: "initital_quantity_available",
+	QuantitySold:              "quantity_sold",
+	CreatedAt:                 "created_at",
+	UpdatedAt:                 "updated_at",
+	DeletedAt:                 "deleted_at",
+	SaleStartDate:             "sale_start_date",
+	SaleEndDate:               "sale_end_date",
 }
 
 // TicketRels is where relationship names are stored.
@@ -94,8 +94,8 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"id", "title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
-	ticketColumnsWithoutDefault = []string{"title", "event_id", "intital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
+	ticketColumns               = []string{"id", "title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
+	ticketColumnsWithoutDefault = []string{"title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
 	ticketColumnsWithDefault    = []string{"id"}
 	ticketPrimaryKeyColumns     = []string{"id"}
 )

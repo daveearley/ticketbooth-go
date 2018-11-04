@@ -1,4 +1,4 @@
-package tickets
+package repository
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-type Repository interface {
+type TicketRepository interface {
 	GetByID(id int) (*models.Ticket, error)
 	DeleteByID(id int) error
 	Store(event *models.Ticket) (*models.Ticket, error)
@@ -18,15 +18,15 @@ type Repository interface {
 	ListQuestions(ticket *models.Ticket) ([]*models.Question, error)
 }
 
-type repository struct {
+type ticketRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) Repository {
-	return &repository{db}
+func NewTicketRepository(db *sql.DB) TicketRepository {
+	return &ticketRepository{db}
 }
 
-func (r *repository) GetByID(id int) (*models.Ticket, error) {
+func (r *ticketRepository) GetByID(id int) (*models.Ticket, error) {
 	event, err := models.FindTicket(r.db, id)
 
 	if err != nil {
@@ -36,7 +36,7 @@ func (r *repository) GetByID(id int) (*models.Ticket, error) {
 	return event, nil
 }
 
-func (r *repository) DeleteByID(id int) error {
+func (r *ticketRepository) DeleteByID(id int) error {
 	ticket, err := models.FindTicket(r.db, id)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (r *repository) DeleteByID(id int) error {
 	return err
 }
 
-func (r *repository) Store(ticket *models.Ticket) (*models.Ticket, error) {
+func (r *ticketRepository) Store(ticket *models.Ticket) (*models.Ticket, error) {
 	if err := ticket.Insert(r.db, boil.Infer()); err != nil {
 		return nil, err
 	}
@@ -56,15 +56,15 @@ func (r *repository) Store(ticket *models.Ticket) (*models.Ticket, error) {
 	return ticket, nil
 }
 
-func (r *repository) SetAttributes(ticket *models.Ticket, attr []*models.Attribute) error {
+func (r *ticketRepository) SetAttributes(ticket *models.Ticket, attr []*models.Attribute) error {
 	return ticket.SetAttributes(r.db, true, attr...)
 }
 
-func (r *repository) SetQuestion(ticket *models.Ticket, question *models.Question) error {
+func (r *ticketRepository) SetQuestion(ticket *models.Ticket, question *models.Question) error {
 	return ticket.AddQuestions(r.db, true, question)
 }
 
-func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
+func (r *ticketRepository) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
 	queryMods := pagination.QueryMods(p)
 	queryMods = append(queryMods, qm.Load("Attributes"))
 	queryMods = append(queryMods, qm.Where("event_id=?", event.ID))
@@ -78,7 +78,7 @@ func (r *repository) List(p *pagination.Params, event *models.Event) ([]*models.
 	return events, nil
 }
 
-func (r *repository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
+func (r *ticketRepository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
 	questions, err := ticket.Questions().All(r.db)
 
 	if err != nil {
