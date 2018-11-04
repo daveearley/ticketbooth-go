@@ -1,4 +1,4 @@
-package helper
+package service
 
 import (
 	"encoding/json"
