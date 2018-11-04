@@ -4,7 +4,7 @@ import (
 	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/attributes"
+	"github.com/daveearley/ticketbooth/app/helper"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
@@ -55,7 +55,7 @@ func (s *ticketService) Create(req request.CreateTicket, event *models.Event) (*
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(ticket, attributes.MapToAttributes(&req.Attributes))
+		s.er.SetAttributes(ticket, helper.MapToAttributes(&req.Attributes))
 	}
 
 	return ticket, nil

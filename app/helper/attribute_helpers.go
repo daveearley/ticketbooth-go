@@ -1,4 +1,4 @@
-package attributes
+package helper
 
 import (
 	"encoding/json"

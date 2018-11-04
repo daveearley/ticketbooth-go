@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/attributes"
+	"github.com/daveearley/ticketbooth/app/helper"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
@@ -49,7 +49,7 @@ func (s *eventService) Create(req request.CreateEvent, user *models.User) (*mode
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(event, attributes.MapToAttributes(&req.Attributes))
+		s.er.SetAttributes(event, helper.MapToAttributes(&req.Attributes))
 	}
 
 	return event, nil
