@@ -21,21 +21,13 @@ func NewAccountRepository(conn *sql.DB) AccountRepository {
 }
 
 func (r *accountRepository) GetByID(id int) (*models.Account, error) {
-	ac, err := models.FindAccount(r.db, id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return ac, nil
+	return models.FindAccount(r.db, id)
 }
 
 func (r *accountRepository) Store(a *models.Account) (*models.Account, error) {
-	if err := a.Insert(r.db, boil.Infer()); err != nil {
-		return nil, err
-	}
+	err := a.Insert(r.db, boil.Infer())
 
-	return a, nil
+	return a, err
 }
 
 func (r *accountRepository) DeleteByID(id int) error {

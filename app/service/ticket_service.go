@@ -28,13 +28,7 @@ func NewTicketService(repository repository.TicketRepository, qRepository reposi
 }
 
 func (s *ticketService) Find(id int) (*models.Ticket, error) {
-	ticket, err := s.er.GetByID(id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return ticket, nil
+	return s.er.GetByID(id)
 }
 
 func (s *ticketService) Delete(id int) error {
@@ -95,11 +89,5 @@ func (s *ticketService) CreateQuestion(req request.CreateQuestion, ticket *model
 }
 
 func (s *ticketService) List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error) {
-	tickets, err := s.er.List(p, event)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return tickets, nil
+	return s.er.List(p, event)
 }

@@ -27,13 +27,7 @@ func NewTicketRepository(db *sql.DB) TicketRepository {
 }
 
 func (r *ticketRepository) GetByID(id int) (*models.Ticket, error) {
-	event, err := models.FindTicket(r.db, id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return event, nil
+	return models.FindTicket(r.db, id)
 }
 
 func (r *ticketRepository) DeleteByID(id int) error {
@@ -49,11 +43,9 @@ func (r *ticketRepository) DeleteByID(id int) error {
 }
 
 func (r *ticketRepository) Store(ticket *models.Ticket) (*models.Ticket, error) {
-	if err := ticket.Insert(r.db, boil.Infer()); err != nil {
-		return nil, err
-	}
+	err := ticket.Insert(r.db, boil.Infer())
 
-	return ticket, nil
+	return ticket, err
 }
 
 func (r *ticketRepository) SetAttributes(ticket *models.Ticket, attr []*models.Attribute) error {
@@ -69,21 +61,9 @@ func (r *ticketRepository) List(p *pagination.Params, event *models.Event) ([]*m
 	queryMods = append(queryMods, qm.Load("Attributes"))
 	queryMods = append(queryMods, qm.Where("event_id=?", event.ID))
 
-	events, err := models.Tickets(queryMods...).All(r.db)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return events, nil
+	return models.Tickets(queryMods...).All(r.db)
 }
 
 func (r *ticketRepository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
-	questions, err := ticket.Questions().All(r.db)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return questions, nil
+	return ticket.Questions().All(r.db)
 }

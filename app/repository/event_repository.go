@@ -32,11 +32,7 @@ func (r *eventRepository) GetByID(id int) (*models.Event, error) {
 		qm.Where("id=?", id),
 	).One(r.db)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return event, nil
+	return event, err
 }
 
 func (r *eventRepository) DeleteByID(id int) error {
@@ -48,29 +44,17 @@ func (r *eventRepository) DeleteByID(id int) error {
 
 	_, err = event.Delete(r.db)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (r *eventRepository) GetByTicketID(id int) (*models.Event, error) {
-	event, err := models.Events(qm.Where("ticket_id=?", id)).One(r.db)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return event, nil
+	return models.Events(qm.Where("ticket_id=?", id)).One(r.db)
 }
 
 func (r *eventRepository) Store(event *models.Event) (*models.Event, error) {
-	if err := event.Insert(r.db, boil.Infer()); err != nil {
-		return nil, err
-	}
+	err := event.Insert(r.db, boil.Infer())
 
-	return event, nil
+	return event, err
 }
 
 func (r *eventRepository) SetAttributes(event *models.Event, attr []*models.Attribute) error {
@@ -84,9 +68,5 @@ func (r *eventRepository) List(p *pagination.Params, authUser *models.User) ([]*
 
 	events, err := models.Events(queryMods...).All(r.db)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return events, nil
+	return events, err
 }

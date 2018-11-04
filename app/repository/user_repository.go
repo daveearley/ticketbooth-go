@@ -22,29 +22,15 @@ func NewUserRepository(conn *sql.DB) UserRepository {
 }
 
 func (r *userRepository) GetById(id int) (*models.User, error) {
-	user, err := models.FindUser(r.db, id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
+	return models.FindUser(r.db, id)
 }
 
 func (r *userRepository) FindByEmail(email string) (*models.User, error) {
-	user, err := models.Users(qm.Where("email=?", email)).One(r.db)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
+	return models.Users(qm.Where("email=?", email)).One(r.db)
 }
 
 func (r *userRepository) Store(a *models.User) (*models.User, error) {
-	if err := a.Insert(r.db, boil.Infer()); err != nil {
-		return a, err
-	}
+	err := a.Insert(r.db, boil.Infer())
 
-	return a, nil
+	return a, err
 }

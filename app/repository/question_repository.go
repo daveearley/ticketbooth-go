@@ -29,11 +29,7 @@ func (r *questionRepository) GetById(id int) (*models.Question, error) {
 func (r *questionRepository) Store(question *models.Question) (*models.Question, error) {
 	err := question.Insert(r.db, boil.Infer())
 
-	if err != nil {
-		return nil, err
-	}
-
-	return question, nil
+	return question, err
 }
 
 func (r *questionRepository) List(p *pagination.Params, event *models.Event) ([]*models.Question, error) {

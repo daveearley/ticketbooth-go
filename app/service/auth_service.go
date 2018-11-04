@@ -52,7 +52,5 @@ func (s *userService) ValidateLoginAndReturnJwtToken(req *request.Login) (string
 		},
 	})
 
-	ss, err := token.SignedString(mySigningKey)
-
-	return ss, err
+	return token.SignedString(mySigningKey)
 }

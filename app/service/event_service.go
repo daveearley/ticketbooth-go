@@ -31,13 +31,7 @@ func (s *eventService) Delete(id int) error {
 }
 
 func (s *eventService) Find(id int) (*models.Event, error) {
-	event, err := s.er.GetByID(id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return event, nil
+	return s.er.GetByID(id)
 }
 
 func (s *eventService) Create(req request.CreateEvent, user *models.User) (*models.Event, error) {
@@ -62,11 +56,5 @@ func (s *eventService) Create(req request.CreateEvent, user *models.User) (*mode
 }
 
 func (s *eventService) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {
-	events, err := s.er.List(p, authUser)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return events, nil
+	return s.er.List(p, authUser)
 }
