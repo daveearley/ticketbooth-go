@@ -1,4 +1,4 @@
-package transformer
+package response
 
 import (
 	"github.com/daveearley/ticketbooth/app"
@@ -23,7 +23,7 @@ type PublicTicketResponse struct {
 
 func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
 	if app.IsUserAuthenticated(c) {
-		return &TicketResponse{t, TransformQuestions(t.R.Questions)}
+		return &TicketResponse{t, TransformQuestions(c, t.R.Questions)}
 	}
 
 	return &PublicTicketResponse{

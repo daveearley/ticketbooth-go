@@ -1,10 +1,12 @@
-package transformer
+package response
 
 import (
+	"fmt"
 	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/null"
+	"reflect"
 	"time"
 )
 
@@ -39,6 +41,9 @@ func TransformEvent(c *gin.Context, event *models.Event) interface{} {
 }
 
 func TransformEvents(c *gin.Context, events []*models.Event) interface{} {
+	r := reflect.TypeOf(events)
+	fmt.Println(r)
+	fmt.Println(reflect.TypeOf([]*models.Attribute{}))
 	var transformedEvents []interface{}
 
 	for _, v := range events {

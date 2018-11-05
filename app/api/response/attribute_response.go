@@ -1,4 +1,4 @@
-package transformer
+package response
 
 import (
 	"github.com/daveearley/ticketbooth/app/models/generated"

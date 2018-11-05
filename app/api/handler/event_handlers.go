@@ -5,7 +5,6 @@ import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/api/transformer"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
@@ -28,7 +27,7 @@ func (ec *eventHandlers) GetById(c *gin.Context) {
 		return
 	}
 
-	response.JSON(c, transformer.TransformEvent(c, event.(*models.Event)))
+	response.JSON(c, event)
 }
 
 func (ec *eventHandlers) DeleteEvent(c *gin.Context) {
@@ -62,7 +61,7 @@ func (ec *eventHandlers) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, transformer.TransformEvent(c, event))
+	response.Created(c, event)
 }
 
 func (ec *eventHandlers) GetAll(c *gin.Context) {
@@ -80,5 +79,5 @@ func (ec *eventHandlers) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, transformer.TransformEvents(c, events))
+	response.Paginated(c, paginationParams, events)
 }

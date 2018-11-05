@@ -4,7 +4,6 @@ import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/api/transformer"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,7 @@ func NewTicketHandlers(ticketSrv service.TicketService, eventSrv service.EventSe
 func (ec *ticketHandlers) GetByID(c *gin.Context) {
 	ticket, _ := c.Get("ticket")
 
-	response.JSON(c, transformer.TransformTicket(c, ticket.(*models.Ticket)))
+	response.JSON(c, ticket)
 }
 
 func (ec *ticketHandlers) DeleteByID(c *gin.Context) {
@@ -56,7 +55,7 @@ func (ec *ticketHandlers) CreateTicket(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, transformer.TransformTicket(c, ticket))
+	response.Created(c, ticket)
 }
 
 func (ec *ticketHandlers) GetAll(c *gin.Context) {
@@ -75,7 +74,7 @@ func (ec *ticketHandlers) GetAll(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, paginationParams, transformer.TransformTickets(c, tix))
+	response.Paginated(c, paginationParams, tix)
 }
 
 func (ec *ticketHandlers) AddQuestion(c *gin.Context) {
@@ -95,5 +94,5 @@ func (ec *ticketHandlers) AddQuestion(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, transformer.TransformTicket(c, ticket.(*models.Ticket)))
+	response.Created(c, ticket)
 }
