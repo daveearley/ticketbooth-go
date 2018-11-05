@@ -10,7 +10,7 @@ import (
 
 type EventResponse struct {
 	*models.Event
-	Attributes []*models.Attribute `json:"attributes"`
+	Attributes interface{} `json:"attributes"`
 }
 
 type PublicEventResponse struct {
@@ -19,13 +19,13 @@ type PublicEventResponse struct {
 	EndDate     time.Time   `json:"end_date"`
 	Description null.String `json:"description"`
 
-	Attributes *Envelope `json:"attributes"`
-	Tickets    *Envelope `json:"tickets"`
+	Attributes interface{} `json:"attributes"`
+	Tickets    interface{} `json:"tickets"`
 }
 
 func TransformEvent(c *gin.Context, event *models.Event) interface{} {
 	if app.IsUserAuthenticated(c) {
-		return &EventResponse{event, event.R.Attributes}
+		return &EventResponse{event, TransformAttributes(c, event.R.Attributes)}
 	}
 
 	return &PublicEventResponse{
@@ -38,12 +38,12 @@ func TransformEvent(c *gin.Context, event *models.Event) interface{} {
 	}
 }
 
-func TransformEvents(c *gin.Context, events []*models.Event) *Envelope {
+func TransformEvents(c *gin.Context, events []*models.Event) interface{} {
 	var transformedEvents []interface{}
 
 	for _, v := range events {
 		transformedEvents = append(transformedEvents, TransformEvent(c, v))
 	}
 
-	return envelope(transformedEvents)
+	return &transformedEvents
 }

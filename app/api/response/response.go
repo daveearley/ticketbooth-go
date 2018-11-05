@@ -40,11 +40,10 @@ func JSON(c *gin.Context, json interface{}) {
 }
 
 func Paginated(c *gin.Context, p *pagination.Params, json interface{}) {
-	jsonResponse := make(map[string]interface{})
-	jsonResponse["data"] = json
-	jsonResponse["pagination"] = p
-
-	c.JSON(http.StatusOK, jsonResponse)
+	c.JSON(http.StatusOK, &gin.H{
+		"data":       json,
+		"pagination": p,
+	})
 }
 
 func StringResponse(c *gin.Context, string string) {

@@ -11,11 +11,11 @@ func TransformQuestion(q *models.Question) *QuestionResponse {
 	return &QuestionResponse{q, q.R.QuestionOptions}
 }
 
-func TransformQuestions(questions []*models.Question) *Envelope {
+func TransformQuestions(questions []*models.Question) interface{} {
 	var transformed []interface{}
 	for _, v := range questions {
 		transformed = append(transformed, TransformQuestion(v))
 	}
 
-	return envelope(transformed)
+	return &transformed
 }

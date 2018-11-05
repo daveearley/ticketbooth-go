@@ -9,7 +9,7 @@ import (
 
 type TicketResponse struct {
 	*models.Ticket
-	Questions *Envelope `json:"questions"`
+	Questions interface{} `json:"questions"`
 }
 
 type PublicTicketResponse struct {
@@ -34,11 +34,11 @@ func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
 	}
 }
 
-func TransformTickets(c *gin.Context, tickets []*models.Ticket) *Envelope {
+func TransformTickets(c *gin.Context, tickets []*models.Ticket) interface{} {
 	var transformed []interface{}
 	for _, v := range tickets {
 		transformed = append(transformed, TransformTicket(c, v))
 	}
 
-	return envelope(transformed)
+	return &transformed
 }

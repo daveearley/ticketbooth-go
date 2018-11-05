@@ -11,7 +11,7 @@ type AttributeResponse struct {
 	Value string `json:"value"`
 }
 
-func TransformAttributes(c *gin.Context, attrs []*models.Attribute) *Envelope {
+func TransformAttributes(c *gin.Context, attrs []*models.Attribute) interface{} {
 	var transformed []interface{}
 	for _, v := range attrs {
 		transformed = append(transformed, &AttributeResponse{
@@ -21,5 +21,5 @@ func TransformAttributes(c *gin.Context, attrs []*models.Attribute) *Envelope {
 		})
 	}
 
-	return envelope(transformed)
+	return &transformed
 }
