@@ -47,7 +47,8 @@ func Paginated(c *gin.Context, p *pagination.Params, json interface{}) {
 	data, err := transform(c, json)
 
 	if err != nil {
-		log.Fatal(err)
+		Error(c, http.StatusInternalServerError, err)
+		return
 	}
 
 	c.JSON(http.StatusOK, &gin.H{
@@ -67,6 +68,7 @@ func envelope(c *gin.Context, d interface{}) *gin.H {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return &gin.H{
 		"data": data,
 	}
