@@ -25,7 +25,6 @@ type Config struct {
 // LoadConfig reads config values from the environment and returns a Config struct. If there is a .env in the
 // project root this will be loaded also. Environment variables get priority over .env values
 func LoadConfig() *Config {
-
 	dotenv.Load()
 
 	return &Config{
