@@ -490,7 +490,7 @@ func testTicketReservationToOneTicketUsingTicket(t *testing.T) {
 	var foreign Ticket
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, ticketReservationDBTypes, true, ticketReservationColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, ticketReservationDBTypes, false, ticketReservationColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize TicketReservation struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, ticketDBTypes, false, ticketColumnsWithDefault...); err != nil {
@@ -501,7 +501,7 @@ func testTicketReservationToOneTicketUsingTicket(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.TicketID, foreign.ID)
+	local.TicketID = foreign.ID
 	if err := local.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +511,7 @@ func testTicketReservationToOneTicketUsingTicket(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.ID, foreign.ID) {
+	if check.ID != foreign.ID {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -541,7 +541,7 @@ func testTicketReservationToOneTransactionUsingTransaction(t *testing.T) {
 	var foreign Transaction
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, ticketReservationDBTypes, true, ticketReservationColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, ticketReservationDBTypes, false, ticketReservationColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize TicketReservation struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
@@ -552,7 +552,7 @@ func testTicketReservationToOneTransactionUsingTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&local.TransactionID, foreign.ID)
+	local.TransactionID = foreign.ID
 	if err := local.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -562,7 +562,7 @@ func testTicketReservationToOneTransactionUsingTransaction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !queries.Equal(check.ID, foreign.ID) {
+	if check.ID != foreign.ID {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -623,7 +623,7 @@ func testTicketReservationToOneSetOpTicketUsingTicket(t *testing.T) {
 		if x.R.TicketReservations[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.TicketID, x.ID) {
+		if a.TicketID != x.ID {
 			t.Error("foreign key was wrong value", a.TicketID)
 		}
 
@@ -634,62 +634,11 @@ func testTicketReservationToOneSetOpTicketUsingTicket(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.TicketID, x.ID) {
+		if a.TicketID != x.ID {
 			t.Error("foreign key was wrong value", a.TicketID, x.ID)
 		}
 	}
 }
-
-func testTicketReservationToOneRemoveOpTicketUsingTicket(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a TicketReservation
-	var b Ticket
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetTicket(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveTicket(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Ticket().Count(tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Ticket != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.TicketID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.TicketReservations) != 0 {
-		t.Error("failed to remove a from b's relationships")
-	}
-}
-
 func testTicketReservationToOneSetOpTransactionUsingTransaction(t *testing.T) {
 	var err error
 
@@ -730,7 +679,7 @@ func testTicketReservationToOneSetOpTransactionUsingTransaction(t *testing.T) {
 		if x.R.TicketReservations[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if !queries.Equal(a.TransactionID, x.ID) {
+		if a.TransactionID != x.ID {
 			t.Error("foreign key was wrong value", a.TransactionID)
 		}
 
@@ -741,59 +690,9 @@ func testTicketReservationToOneSetOpTransactionUsingTransaction(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if !queries.Equal(a.TransactionID, x.ID) {
+		if a.TransactionID != x.ID {
 			t.Error("foreign key was wrong value", a.TransactionID, x.ID)
 		}
-	}
-}
-
-func testTicketReservationToOneRemoveOpTransactionUsingTransaction(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a TicketReservation
-	var b Transaction
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetTransaction(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveTransaction(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Transaction().Count(tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Transaction != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.TransactionID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.TicketReservations) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 

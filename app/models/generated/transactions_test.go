@@ -584,8 +584,9 @@ func testTransactionToManyTicketReservations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&b.TransactionID, a.ID)
-	queries.Assign(&c.TransactionID, a.ID)
+	b.TransactionID = a.ID
+	c.TransactionID = a.ID
+
 	if err = b.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -600,10 +601,10 @@ func testTransactionToManyTicketReservations(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range ticketReservation {
-		if queries.Equal(v.TransactionID, b.TransactionID) {
+		if v.TransactionID == b.TransactionID {
 			bFound = true
 		}
-		if queries.Equal(v.TransactionID, c.TransactionID) {
+		if v.TransactionID == c.TransactionID {
 			cFound = true
 		}
 	}
@@ -994,10 +995,10 @@ func testTransactionToManyAddOpTicketReservations(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if !queries.Equal(a.ID, first.TransactionID) {
+		if a.ID != first.TransactionID {
 			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
 		}
-		if !queries.Equal(a.ID, second.TransactionID) {
+		if a.ID != second.TransactionID {
 			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
 		}
 
@@ -1024,180 +1025,6 @@ func testTransactionToManyAddOpTicketReservations(t *testing.T) {
 		}
 	}
 }
-
-func testTransactionToManySetOpTicketReservations(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Transaction
-	var b, c, d, e TicketReservation
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*TicketReservation{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetTicketReservations(tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.TicketReservations().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetTicketReservations(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.TicketReservations().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.TransactionID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.TransactionID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.TransactionID) {
-		t.Error("foreign key was wrong value", a.ID, d.TransactionID)
-	}
-	if !queries.Equal(a.ID, e.TransactionID) {
-		t.Error("foreign key was wrong value", a.ID, e.TransactionID)
-	}
-
-	if b.R.Transaction != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Transaction != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Transaction != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Transaction != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.TicketReservations[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.TicketReservations[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testTransactionToManyRemoveOpTicketReservations(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Transaction
-	var b, c, d, e TicketReservation
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*TicketReservation{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddTicketReservations(tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.TicketReservations().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveTicketReservations(tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.TicketReservations().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.TransactionID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.TransactionID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Transaction != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Transaction != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Transaction != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Transaction != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.TicketReservations) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.TicketReservations[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.TicketReservations[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
 func testTransactionToManyAddOpAttributes(t *testing.T) {
 	var err error
 

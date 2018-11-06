@@ -779,7 +779,7 @@ func (transactionL) LoadTicketReservations(e boil.Executor, singular bool, maybe
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.ID) {
+				if a == obj.ID {
 					continue Outer
 				}
 			}
@@ -830,7 +830,7 @@ func (transactionL) LoadTicketReservations(e boil.Executor, singular bool, maybe
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.TransactionID) {
+			if local.ID == foreign.TransactionID {
 				local.R.TicketReservations = append(local.R.TicketReservations, foreign)
 				if foreign.R == nil {
 					foreign.R = &ticketReservationR{}
@@ -1292,7 +1292,7 @@ func (o *Transaction) AddTicketReservations(exec boil.Executor, insert bool, rel
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.TransactionID, o.ID)
+			rel.TransactionID = o.ID
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1313,7 +1313,7 @@ func (o *Transaction) AddTicketReservations(exec boil.Executor, insert bool, rel
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.TransactionID, o.ID)
+			rel.TransactionID = o.ID
 		}
 	}
 
@@ -1334,76 +1334,6 @@ func (o *Transaction) AddTicketReservations(exec boil.Executor, insert bool, rel
 			rel.R.Transaction = o
 		}
 	}
-	return nil
-}
-
-// SetTicketReservations removes all previously related items of the
-// transaction replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Transaction's TicketReservations accordingly.
-// Replaces o.R.TicketReservations with related.
-// Sets related.R.Transaction's TicketReservations accordingly.
-func (o *Transaction) SetTicketReservations(exec boil.Executor, insert bool, related ...*TicketReservation) error {
-	query := "update \"ticket_reservations\" set \"transaction_id\" = null where \"transaction_id\" = $1"
-	values := []interface{}{o.ID}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.TicketReservations {
-			queries.SetScanner(&rel.TransactionID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Transaction = nil
-		}
-
-		o.R.TicketReservations = nil
-	}
-	return o.AddTicketReservations(exec, insert, related...)
-}
-
-// RemoveTicketReservations relationships from objects passed in.
-// Removes related items from R.TicketReservations (uses pointer comparison, removal does not keep order)
-// Sets related.R.Transaction.
-func (o *Transaction) RemoveTicketReservations(exec boil.Executor, related ...*TicketReservation) error {
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.TransactionID, nil)
-		if rel.R != nil {
-			rel.R.Transaction = nil
-		}
-		if _, err = rel.Update(exec, boil.Whitelist("transaction_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.TicketReservations {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.TicketReservations)
-			if ln > 1 && i < ln-1 {
-				o.R.TicketReservations[i] = o.R.TicketReservations[ln-1]
-			}
-			o.R.TicketReservations = o.R.TicketReservations[:ln-1]
-			break
-		}
-	}
-
 	return nil
 }
 

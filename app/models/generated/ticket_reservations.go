@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -23,9 +22,9 @@ import (
 // TicketReservation is an object representing the database table.
 type TicketReservation struct {
 	ID             int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	TicketID       null.Int  `boil:"ticket_id" json:"ticket_id,omitempty" toml:"ticket_id" yaml:"ticket_id,omitempty"`
-	TransactionID  null.Int  `boil:"transaction_id" json:"transaction_id,omitempty" toml:"transaction_id" yaml:"transaction_id,omitempty"`
-	TicketQuantity null.Int  `boil:"ticket_quantity" json:"ticket_quantity,omitempty" toml:"ticket_quantity" yaml:"ticket_quantity,omitempty"`
+	TicketID       int       `boil:"ticket_id" json:"ticket_id" toml:"ticket_id" yaml:"ticket_id"`
+	TransactionID  int       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TicketQuantity int       `boil:"ticket_quantity" json:"ticket_quantity" toml:"ticket_quantity" yaml:"ticket_quantity"`
 	ReservedUntil  time.Time `boil:"reserved_until" json:"reserved_until" toml:"reserved_until" yaml:"reserved_until"`
 
 	R *ticketReservationR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -365,7 +364,7 @@ func (ticketReservationL) LoadTicket(e boil.Executor, singular bool, maybeTicket
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.TicketID) {
+				if a == obj.TicketID {
 					continue Outer
 				}
 			}
@@ -420,7 +419,7 @@ func (ticketReservationL) LoadTicket(e boil.Executor, singular bool, maybeTicket
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.TicketID, foreign.ID) {
+			if local.TicketID == foreign.ID {
 				local.R.Ticket = foreign
 				if foreign.R == nil {
 					foreign.R = &ticketR{}
@@ -460,7 +459,7 @@ func (ticketReservationL) LoadTransaction(e boil.Executor, singular bool, maybeT
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.TransactionID) {
+				if a == obj.TransactionID {
 					continue Outer
 				}
 			}
@@ -515,7 +514,7 @@ func (ticketReservationL) LoadTransaction(e boil.Executor, singular bool, maybeT
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if queries.Equal(local.TransactionID, foreign.ID) {
+			if local.TransactionID == foreign.ID {
 				local.R.Transaction = foreign
 				if foreign.R == nil {
 					foreign.R = &transactionR{}
@@ -556,7 +555,7 @@ func (o *TicketReservation) SetTicket(exec boil.Executor, insert bool, related *
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.TicketID, related.ID)
+	o.TicketID = related.ID
 	if o.R == nil {
 		o.R = &ticketReservationR{
 			Ticket: related,
@@ -573,37 +572,6 @@ func (o *TicketReservation) SetTicket(exec boil.Executor, insert bool, related *
 		related.R.TicketReservations = append(related.R.TicketReservations, o)
 	}
 
-	return nil
-}
-
-// RemoveTicket relationship.
-// Sets o.R.Ticket to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *TicketReservation) RemoveTicket(exec boil.Executor, related *Ticket) error {
-	var err error
-
-	queries.SetScanner(&o.TicketID, nil)
-	if _, err = o.Update(exec, boil.Whitelist("ticket_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.Ticket = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.TicketReservations {
-		if queries.Equal(o.TicketID, ri.TicketID) {
-			continue
-		}
-
-		ln := len(related.R.TicketReservations)
-		if ln > 1 && i < ln-1 {
-			related.R.TicketReservations[i] = related.R.TicketReservations[ln-1]
-		}
-		related.R.TicketReservations = related.R.TicketReservations[:ln-1]
-		break
-	}
 	return nil
 }
 
@@ -634,7 +602,7 @@ func (o *TicketReservation) SetTransaction(exec boil.Executor, insert bool, rela
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	queries.Assign(&o.TransactionID, related.ID)
+	o.TransactionID = related.ID
 	if o.R == nil {
 		o.R = &ticketReservationR{
 			Transaction: related,
@@ -651,37 +619,6 @@ func (o *TicketReservation) SetTransaction(exec boil.Executor, insert bool, rela
 		related.R.TicketReservations = append(related.R.TicketReservations, o)
 	}
 
-	return nil
-}
-
-// RemoveTransaction relationship.
-// Sets o.R.Transaction to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *TicketReservation) RemoveTransaction(exec boil.Executor, related *Transaction) error {
-	var err error
-
-	queries.SetScanner(&o.TransactionID, nil)
-	if _, err = o.Update(exec, boil.Whitelist("transaction_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.Transaction = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.TicketReservations {
-		if queries.Equal(o.TransactionID, ri.TransactionID) {
-			continue
-		}
-
-		ln := len(related.R.TicketReservations)
-		if ln > 1 && i < ln-1 {
-			related.R.TicketReservations[i] = related.R.TicketReservations[ln-1]
-		}
-		related.R.TicketReservations = related.R.TicketReservations[:ln-1]
-		break
-	}
 	return nil
 }
 

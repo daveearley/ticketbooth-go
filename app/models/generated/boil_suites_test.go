@@ -346,10 +346,7 @@ func TestToOneSet(t *testing.T) {
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {
-	t.Run("TicketReservationToTicketUsingTicketReservations", testTicketReservationToOneRemoveOpTicketUsingTicket)
-	t.Run("TicketReservationToTransactionUsingTicketReservations", testTicketReservationToOneRemoveOpTransactionUsingTransaction)
-}
+func TestToOneRemove(t *testing.T) {}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -406,8 +403,6 @@ func TestToManySet(t *testing.T) {
 	t.Run("QuestionToTickets", testQuestionToManySetOpTickets)
 	t.Run("TicketToAttributes", testTicketToManySetOpAttributes)
 	t.Run("TicketToQuestions", testTicketToManySetOpQuestions)
-	t.Run("TicketToTicketReservations", testTicketToManySetOpTicketReservations)
-	t.Run("TransactionToTicketReservations", testTransactionToManySetOpTicketReservations)
 	t.Run("TransactionToAttributes", testTransactionToManySetOpAttributes)
 }
 
@@ -423,8 +418,6 @@ func TestToManyRemove(t *testing.T) {
 	t.Run("QuestionToTickets", testQuestionToManyRemoveOpTickets)
 	t.Run("TicketToAttributes", testTicketToManyRemoveOpAttributes)
 	t.Run("TicketToQuestions", testTicketToManyRemoveOpQuestions)
-	t.Run("TicketToTicketReservations", testTicketToManyRemoveOpTicketReservations)
-	t.Run("TransactionToTicketReservations", testTransactionToManyRemoveOpTicketReservations)
 	t.Run("TransactionToAttributes", testTransactionToManyRemoveOpAttributes)
 }
 
