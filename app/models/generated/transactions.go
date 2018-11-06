@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -24,7 +25,7 @@ import (
 type Transaction struct {
 	ID            int           `boil:"id" json:"id" toml:"id" yaml:"id"`
 	EventID       int           `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
-	CustomerID    int           `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
+	CustomerID    null.Int      `boil:"customer_id" json:"customer_id,omitempty" toml:"customer_id" yaml:"customer_id,omitempty"`
 	Total         types.Decimal `boil:"total" json:"total" toml:"total" yaml:"total"`
 	TotalTax      types.Decimal `boil:"total_tax" json:"total_tax" toml:"total_tax" yaml:"total_tax"`
 	TotalDiscount types.Decimal `boil:"total_discount" json:"total_discount" toml:"total_discount" yaml:"total_discount"`
@@ -593,7 +594,7 @@ func (transactionL) LoadCustomer(e boil.Executor, singular bool, maybeTransactio
 			}
 
 			for _, a := range args {
-				if a == obj.CustomerID {
+				if queries.Equal(a, obj.CustomerID) {
 					continue Outer
 				}
 			}
@@ -648,7 +649,7 @@ func (transactionL) LoadCustomer(e boil.Executor, singular bool, maybeTransactio
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.CustomerID == foreign.ID {
+			if queries.Equal(local.CustomerID, foreign.ID) {
 				local.R.Customer = foreign
 				if foreign.R == nil {
 					foreign.R = &customerR{}
@@ -1211,7 +1212,7 @@ func (o *Transaction) SetCustomer(exec boil.Executor, insert bool, related *Cust
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.CustomerID = related.ID
+	queries.Assign(&o.CustomerID, related.ID)
 	if o.R == nil {
 		o.R = &transactionR{
 			Customer: related,
@@ -1228,6 +1229,37 @@ func (o *Transaction) SetCustomer(exec boil.Executor, insert bool, related *Cust
 		related.R.Transactions = append(related.R.Transactions, o)
 	}
 
+	return nil
+}
+
+// RemoveCustomer relationship.
+// Sets o.R.Customer to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Transaction) RemoveCustomer(exec boil.Executor, related *Customer) error {
+	var err error
+
+	queries.SetScanner(&o.CustomerID, nil)
+	if _, err = o.Update(exec, boil.Whitelist("customer_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.Customer = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.Transactions {
+		if queries.Equal(o.CustomerID, ri.CustomerID) {
+			continue
+		}
+
+		ln := len(related.R.Transactions)
+		if ln > 1 && i < ln-1 {
+			related.R.Transactions[i] = related.R.Transactions[ln-1]
+		}
+		related.R.Transactions = related.R.Transactions[:ln-1]
+		break
+	}
 	return nil
 }
 

@@ -711,7 +711,7 @@ func (customerL) LoadTransactions(e boil.Executor, singular bool, maybeCustomer 
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -762,7 +762,7 @@ func (customerL) LoadTransactions(e boil.Executor, singular bool, maybeCustomer 
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.CustomerID {
+			if queries.Equal(local.ID, foreign.CustomerID) {
 				local.R.Transactions = append(local.R.Transactions, foreign)
 				if foreign.R == nil {
 					foreign.R = &transactionR{}
@@ -931,7 +931,7 @@ func (o *Customer) AddTransactions(exec boil.Executor, insert bool, related ...*
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.CustomerID = o.ID
+			queries.Assign(&rel.CustomerID, o.ID)
 			if err = rel.Insert(exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -952,7 +952,7 @@ func (o *Customer) AddTransactions(exec boil.Executor, insert bool, related ...*
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.CustomerID = o.ID
+			queries.Assign(&rel.CustomerID, o.ID)
 		}
 	}
 
@@ -973,6 +973,76 @@ func (o *Customer) AddTransactions(exec boil.Executor, insert bool, related ...*
 			rel.R.Customer = o
 		}
 	}
+	return nil
+}
+
+// SetTransactions removes all previously related items of the
+// customer replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Customer's Transactions accordingly.
+// Replaces o.R.Transactions with related.
+// Sets related.R.Customer's Transactions accordingly.
+func (o *Customer) SetTransactions(exec boil.Executor, insert bool, related ...*Transaction) error {
+	query := "update \"transactions\" set \"customer_id\" = null where \"customer_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Transactions {
+			queries.SetScanner(&rel.CustomerID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Customer = nil
+		}
+
+		o.R.Transactions = nil
+	}
+	return o.AddTransactions(exec, insert, related...)
+}
+
+// RemoveTransactions relationships from objects passed in.
+// Removes related items from R.Transactions (uses pointer comparison, removal does not keep order)
+// Sets related.R.Customer.
+func (o *Customer) RemoveTransactions(exec boil.Executor, related ...*Transaction) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.CustomerID, nil)
+		if rel.R != nil {
+			rel.R.Customer = nil
+		}
+		if _, err = rel.Update(exec, boil.Whitelist("customer_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Transactions {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Transactions)
+			if ln > 1 && i < ln-1 {
+				o.R.Transactions[i] = o.R.Transactions[ln-1]
+			}
+			o.R.Transactions = o.R.Transactions[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

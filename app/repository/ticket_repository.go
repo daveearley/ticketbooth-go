@@ -5,6 +5,7 @@ import (
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -16,6 +17,7 @@ type TicketRepository interface {
 	SetQuestion(ticket *models.Ticket, question *models.Question) error
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 	ListQuestions(ticket *models.Ticket) ([]*models.Question, error)
+	GetRemainingTicketQuantity(ticket *models.Ticket) (int, error)
 }
 
 type ticketRepository struct {
@@ -40,6 +42,27 @@ func (r *ticketRepository) DeleteByID(id int) error {
 	_, err = ticket.Delete(r.db)
 
 	return err
+}
+
+func (r *ticketRepository) GetRemainingTicketQuantity(ticket *models.Ticket) (int, error) {
+	type ResultCount struct {
+		Count int `json:"count"`
+	}
+
+	var result ResultCount
+
+	err := queries.Raw(`
+  		SELECT COALESCE(sum(ticket_quantity), 0) AS count
+		FROM ticket_reservations
+		WHERE ticket_id = ?
+  		AND current_timestamp  < reserved_until' `, ticket.ID,
+	).Bind(nil, r.db, &result)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return ticket.InititalQuantityAvailable - (ticket.QuantitySold + result.Count), nil
 }
 
 func (r *ticketRepository) Store(ticket *models.Ticket) (*models.Ticket, error) {

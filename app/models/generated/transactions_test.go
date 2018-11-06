@@ -1458,7 +1458,7 @@ func testTransactionToOneCustomerUsingCustomer(t *testing.T) {
 	var foreign Customer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Transaction struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, customerDBTypes, false, customerColumnsWithDefault...); err != nil {
@@ -1469,7 +1469,7 @@ func testTransactionToOneCustomerUsingCustomer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.CustomerID = foreign.ID
+	queries.Assign(&local.CustomerID, foreign.ID)
 	if err := local.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -1479,7 +1479,7 @@ func testTransactionToOneCustomerUsingCustomer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
+	if !queries.Equal(check.ID, foreign.ID) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -1596,7 +1596,7 @@ func testTransactionToOneSetOpCustomerUsingCustomer(t *testing.T) {
 		if x.R.Transactions[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.CustomerID != x.ID {
+		if !queries.Equal(a.CustomerID, x.ID) {
 			t.Error("foreign key was wrong value", a.CustomerID)
 		}
 
@@ -1607,9 +1607,59 @@ func testTransactionToOneSetOpCustomerUsingCustomer(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.CustomerID != x.ID {
+		if !queries.Equal(a.CustomerID, x.ID) {
 			t.Error("foreign key was wrong value", a.CustomerID, x.ID)
 		}
+	}
+}
+
+func testTransactionToOneRemoveOpCustomerUsingCustomer(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Transaction
+	var b Customer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetCustomer(tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveCustomer(tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Customer().Count(tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Customer != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.CustomerID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.Transactions) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 

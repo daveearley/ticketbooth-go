@@ -346,7 +346,9 @@ func TestToOneSet(t *testing.T) {
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {}
+func TestToOneRemove(t *testing.T) {
+	t.Run("TransactionToCustomerUsingTransactions", testTransactionToOneRemoveOpCustomerUsingCustomer)
+}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -397,6 +399,7 @@ func TestToManySet(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManySetOpEvents)
 	t.Run("AttributeToTickets", testAttributeToManySetOpTickets)
 	t.Run("AttributeToTransactions", testAttributeToManySetOpTransactions)
+	t.Run("CustomerToTransactions", testCustomerToManySetOpTransactions)
 	t.Run("EventToAttributes", testEventToManySetOpAttributes)
 	t.Run("EventToQuestions", testEventToManySetOpQuestions)
 	t.Run("QuestionToEvents", testQuestionToManySetOpEvents)
@@ -412,6 +415,7 @@ func TestToManyRemove(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManyRemoveOpEvents)
 	t.Run("AttributeToTickets", testAttributeToManyRemoveOpTickets)
 	t.Run("AttributeToTransactions", testAttributeToManyRemoveOpTransactions)
+	t.Run("CustomerToTransactions", testCustomerToManyRemoveOpTransactions)
 	t.Run("EventToAttributes", testEventToManyRemoveOpAttributes)
 	t.Run("EventToQuestions", testEventToManyRemoveOpQuestions)
 	t.Run("QuestionToEvents", testQuestionToManyRemoveOpEvents)
