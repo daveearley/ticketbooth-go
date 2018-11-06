@@ -727,6 +727,83 @@ func testTicketToManyQuestions(t *testing.T) {
 	}
 }
 
+func testTicketToManyTicketReservations(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c TicketReservation
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, true, ticketColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Ticket struct: %s", err)
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, ticketReservationDBTypes, false, ticketReservationColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, ticketReservationDBTypes, false, ticketReservationColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.TicketID, a.ID)
+	queries.Assign(&c.TicketID, a.ID)
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	ticketReservation, err := a.TicketReservations().All(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range ticketReservation {
+		if queries.Equal(v.TicketID, b.TicketID) {
+			bFound = true
+		}
+		if queries.Equal(v.TicketID, c.TicketID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TicketSlice{&a}
+	if err = a.L.LoadTicketReservations(tx, false, (*[]*Ticket)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.TicketReservations); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.TicketReservations = nil
+	if err = a.L.LoadTicketReservations(tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.TicketReservations); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", ticketReservation)
+	}
+}
+
 func testTicketToManyTransactionItems(t *testing.T) {
 	var err error
 
@@ -1325,6 +1402,254 @@ func testTicketToManyRemoveOpQuestions(t *testing.T) {
 		t.Error("relationship to d should have been preserved")
 	}
 	if a.R.Questions[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testTicketToManyAddOpTicketReservations(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c, d, e TicketReservation
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*TicketReservation{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*TicketReservation{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddTicketReservations(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.TicketID) {
+			t.Error("foreign key was wrong value", a.ID, first.TicketID)
+		}
+		if !queries.Equal(a.ID, second.TicketID) {
+			t.Error("foreign key was wrong value", a.ID, second.TicketID)
+		}
+
+		if first.R.Ticket != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Ticket != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.TicketReservations[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.TicketReservations[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.TicketReservations().Count(tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testTicketToManySetOpTicketReservations(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c, d, e TicketReservation
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*TicketReservation{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetTicketReservations(tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.TicketReservations().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetTicketReservations(tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.TicketReservations().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.TicketID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.TicketID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.TicketID) {
+		t.Error("foreign key was wrong value", a.ID, d.TicketID)
+	}
+	if !queries.Equal(a.ID, e.TicketID) {
+		t.Error("foreign key was wrong value", a.ID, e.TicketID)
+	}
+
+	if b.R.Ticket != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Ticket != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Ticket != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Ticket != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.TicketReservations[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.TicketReservations[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testTicketToManyRemoveOpTicketReservations(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Ticket
+	var b, c, d, e TicketReservation
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, ticketDBTypes, false, strmangle.SetComplement(ticketPrimaryKeyColumns, ticketColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*TicketReservation{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, ticketReservationDBTypes, false, strmangle.SetComplement(ticketReservationPrimaryKeyColumns, ticketReservationColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddTicketReservations(tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.TicketReservations().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveTicketReservations(tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.TicketReservations().Count(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.TicketID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.TicketID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Ticket != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Ticket != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Ticket != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Ticket != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.TicketReservations) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.TicketReservations[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.TicketReservations[0] != &e {
 		t.Error("relationship to e should have been preserved")
 	}
 }

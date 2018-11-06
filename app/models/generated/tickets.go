@@ -63,26 +63,29 @@ var TicketColumns = struct {
 
 // TicketRels is where relationship names are stored.
 var TicketRels = struct {
-	Event            string
-	Attendees        string
-	Attributes       string
-	Questions        string
-	TransactionItems string
+	Event              string
+	Attendees          string
+	Attributes         string
+	Questions          string
+	TicketReservations string
+	TransactionItems   string
 }{
-	Event:            "Event",
-	Attendees:        "Attendees",
-	Attributes:       "Attributes",
-	Questions:        "Questions",
-	TransactionItems: "TransactionItems",
+	Event:              "Event",
+	Attendees:          "Attendees",
+	Attributes:         "Attributes",
+	Questions:          "Questions",
+	TicketReservations: "TicketReservations",
+	TransactionItems:   "TransactionItems",
 }
 
 // ticketR is where relationships are stored.
 type ticketR struct {
-	Event            *Event
-	Attendees        AttendeeSlice
-	Attributes       AttributeSlice
-	Questions        QuestionSlice
-	TransactionItems TransactionItemSlice
+	Event              *Event
+	Attendees          AttendeeSlice
+	Attributes         AttributeSlice
+	Questions          QuestionSlice
+	TicketReservations TicketReservationSlice
+	TransactionItems   TransactionItemSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -409,6 +412,27 @@ func (o *Ticket) Questions(mods ...qm.QueryMod) questionQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"questions\".*"})
+	}
+
+	return query
+}
+
+// TicketReservations retrieves all the ticket_reservation's TicketReservations with an executor.
+func (o *Ticket) TicketReservations(mods ...qm.QueryMod) ticketReservationQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"ticket_reservations\".\"ticket_id\"=?", o.ID),
+	)
+
+	query := TicketReservations(queryMods...)
+	queries.SetFrom(query.Query, "\"ticket_reservations\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"ticket_reservations\".*"})
 	}
 
 	return query
@@ -835,6 +859,97 @@ func (ticketL) LoadQuestions(e boil.Executor, singular bool, maybeTicket interfa
 					foreign.R = &questionR{}
 				}
 				foreign.R.Tickets = append(foreign.R.Tickets, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTicketReservations allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (ticketL) LoadTicketReservations(e boil.Executor, singular bool, maybeTicket interface{}, mods queries.Applicator) error {
+	var slice []*Ticket
+	var object *Ticket
+
+	if singular {
+		object = maybeTicket.(*Ticket)
+	} else {
+		slice = *maybeTicket.(*[]*Ticket)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &ticketR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &ticketR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	query := NewQuery(qm.From(`ticket_reservations`), qm.WhereIn(`ticket_id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load ticket_reservations")
+	}
+
+	var resultSlice []*TicketReservation
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice ticket_reservations")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on ticket_reservations")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ticket_reservations")
+	}
+
+	if len(ticketReservationAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TicketReservations = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &ticketReservationR{}
+			}
+			foreign.R.Ticket = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TicketID) {
+				local.R.TicketReservations = append(local.R.TicketReservations, foreign)
+				if foreign.R == nil {
+					foreign.R = &ticketReservationR{}
+				}
+				foreign.R.Ticket = local
 				break
 			}
 		}
@@ -1312,6 +1427,129 @@ func removeQuestionsFromTicketsSlice(o *Ticket, related []*Question) {
 			break
 		}
 	}
+}
+
+// AddTicketReservations adds the given related objects to the existing relationships
+// of the ticket, optionally inserting them as new records.
+// Appends related to o.R.TicketReservations.
+// Sets related.R.Ticket appropriately.
+func (o *Ticket) AddTicketReservations(exec boil.Executor, insert bool, related ...*TicketReservation) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TicketID, o.ID)
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"ticket_reservations\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"ticket_id"}),
+				strmangle.WhereClause("\"", "\"", 2, ticketReservationPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TicketID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &ticketR{
+			TicketReservations: related,
+		}
+	} else {
+		o.R.TicketReservations = append(o.R.TicketReservations, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &ticketReservationR{
+				Ticket: o,
+			}
+		} else {
+			rel.R.Ticket = o
+		}
+	}
+	return nil
+}
+
+// SetTicketReservations removes all previously related items of the
+// ticket replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Ticket's TicketReservations accordingly.
+// Replaces o.R.TicketReservations with related.
+// Sets related.R.Ticket's TicketReservations accordingly.
+func (o *Ticket) SetTicketReservations(exec boil.Executor, insert bool, related ...*TicketReservation) error {
+	query := "update \"ticket_reservations\" set \"ticket_id\" = null where \"ticket_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, query)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	_, err := exec.Exec(query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TicketReservations {
+			queries.SetScanner(&rel.TicketID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Ticket = nil
+		}
+
+		o.R.TicketReservations = nil
+	}
+	return o.AddTicketReservations(exec, insert, related...)
+}
+
+// RemoveTicketReservations relationships from objects passed in.
+// Removes related items from R.TicketReservations (uses pointer comparison, removal does not keep order)
+// Sets related.R.Ticket.
+func (o *Ticket) RemoveTicketReservations(exec boil.Executor, related ...*TicketReservation) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TicketID, nil)
+		if rel.R != nil {
+			rel.R.Ticket = nil
+		}
+		if _, err = rel.Update(exec, boil.Whitelist("ticket_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TicketReservations {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TicketReservations)
+			if ln > 1 && i < ln-1 {
+				o.R.TicketReservations[i] = o.R.TicketReservations[ln-1]
+			}
+			o.R.TicketReservations = o.R.TicketReservations[:ln-1]
+			break
+		}
+	}
+
+	return nil
 }
 
 // AddTransactionItems adds the given related objects to the existing relationships
