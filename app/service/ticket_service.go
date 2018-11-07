@@ -15,6 +15,8 @@ type TicketService interface {
 	Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error)
 	CreateQuestion(req request.CreateQuestion, ticket *models.Ticket) (*models.Question, error)
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
+	GetRemainingTicketQuantity(ticket *models.Ticket) (int, error)
+	FindByEventID(ticketID int) ([]*models.Ticket, error)
 }
 
 type ticketService struct {
@@ -26,8 +28,22 @@ func NewTicketService(repository repository.TicketRepository, qRepository reposi
 	return &ticketService{repository, qRepository}
 }
 
+func (s *ticketService) FindByEventID(ticketID int) ([]*models.Ticket, error) {
+	return s.er.FindByEventID(ticketID)
+}
+
 func (s *ticketService) Find(id int) (*models.Ticket, error) {
 	return s.er.GetByID(id)
+}
+
+func (s *ticketService) GetRemainingTicketQuantity(ticket *models.Ticket) (int, error) {
+	reservedQty, err := s.er.GetReservedTicketQuantity(ticket)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return ticket.InititalQuantityAvailable - (ticket.QuantitySold + reservedQty), nil
 }
 
 func (s *ticketService) Delete(id int) error {

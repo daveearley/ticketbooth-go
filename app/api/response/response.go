@@ -97,5 +97,5 @@ func transform(c *gin.Context, data interface{}) (interface{}, error) {
 		return TransformQuestion(c, data.(*models.Question)), nil
 	}
 
-	return nil, errors.New("unable to transform: " + reflect.TypeOf(data).String())
+	return data, nil
 }

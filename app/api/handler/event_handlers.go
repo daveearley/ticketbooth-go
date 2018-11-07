@@ -12,11 +12,12 @@ import (
 )
 
 type eventHandlers struct {
-	srv service.EventService
+	srv    service.EventService
+	ticSrv service.TicketService
 }
 
-func NewEventHandlers(srv service.EventService) *eventHandlers {
-	return &eventHandlers{srv}
+func NewEventHandlers(srv service.EventService, ticSrv service.TicketService) *eventHandlers {
+	return &eventHandlers{srv, ticSrv}
 }
 
 func (ec *eventHandlers) GetById(c *gin.Context) {
@@ -28,6 +29,31 @@ func (ec *eventHandlers) GetById(c *gin.Context) {
 	}
 
 	response.JSON(c, event)
+}
+
+func (ec *eventHandlers) PublicGetByID(c *gin.Context) {
+	event, _ := c.Get("event")
+	tickets, err := ec.ticSrv.FindByEventID(event.(*models.Event).ID)
+
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err)
+	}
+
+	var tics []*response.PublicTicketResponse
+	for _, ticket := range tickets {
+		qtyRemaining, _ := ec.ticSrv.GetRemainingTicketQuantity(ticket)
+
+		tics = append(tics, &response.PublicTicketResponse{
+			ID:                ticket.ID,
+			Title:             ticket.Title,
+			QuantityAvailable: qtyRemaining,
+		})
+	}
+
+	resp := response.TransformEvent(c, event.(*models.Event)).(*response.PublicEventResponse)
+	resp.Tickets = tics
+
+	response.JSON(c, resp)
 }
 
 func (ec *eventHandlers) DeleteEvent(c *gin.Context) {

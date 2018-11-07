@@ -37,7 +37,7 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	// Controllers
 	authController := handler.NewAuthHandlers(authService)
 	ticketController := handler.NewTicketHandlers(ticketService, eventService)
-	eventController := handler.NewEventHandlers(eventService)
+	eventController := handler.NewEventHandlers(eventService, ticketService)
 	accountController := handler.NewAccountHandlers(accountService)
 
 	server.POST("/login", authController.Login)
@@ -85,7 +85,7 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 
 	apiPublicGroup := server.Group("/v1/public")
 	{
-		apiPublicGroup.GET("/events/:event_id", eventController.GetById)
+		apiPublicGroup.GET("/events/:event_id", eventController.PublicGetByID)
 
 		// 1. GET get event & tickets in single request
 		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time
