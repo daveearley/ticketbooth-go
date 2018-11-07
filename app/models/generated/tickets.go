@@ -32,6 +32,7 @@ type Ticket struct {
 	DeletedAt                 time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 	SaleStartDate             null.Time `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
 	SaleEndDate               null.Time `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
+	MaxPerTransaction         null.Int  `boil:"max_per_transaction" json:"max_per_transaction,omitempty" toml:"max_per_transaction" yaml:"max_per_transaction,omitempty"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,6 +49,7 @@ var TicketColumns = struct {
 	DeletedAt                 string
 	SaleStartDate             string
 	SaleEndDate               string
+	MaxPerTransaction         string
 }{
 	ID:                        "id",
 	Title:                     "title",
@@ -59,6 +61,7 @@ var TicketColumns = struct {
 	DeletedAt:                 "deleted_at",
 	SaleStartDate:             "sale_start_date",
 	SaleEndDate:               "sale_end_date",
+	MaxPerTransaction:         "max_per_transaction",
 }
 
 // TicketRels is where relationship names are stored.
@@ -97,8 +100,8 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"id", "title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
-	ticketColumnsWithoutDefault = []string{"title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date"}
+	ticketColumns               = []string{"id", "title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date", "max_per_transaction"}
+	ticketColumnsWithoutDefault = []string{"title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date", "max_per_transaction"}
 	ticketColumnsWithDefault    = []string{"id"}
 	ticketPrimaryKeyColumns     = []string{"id"}
 )

@@ -57,6 +57,7 @@ func (s *ticketService) Create(req request.CreateTicket, event *models.Event) (*
 		Title:                     req.Title,
 		SaleStartDate:             null.NewTime(req.SaleStartDate, true),
 		SaleEndDate:               null.NewTime(req.SaleEndDate, true),
+		MaxPerTransaction:         null.IntFrom(req.MaxPerTransaction),
 		InititalQuantityAvailable: req.Quantity,
 		EventID:                   event.ID,
 	}

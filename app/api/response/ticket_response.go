@@ -19,6 +19,7 @@ type PublicTicketResponse struct {
 	QuantityAvailable int       `json:"quantity_available"`
 	SaleStartDate     null.Time `json:"sale_start_date"`
 	SaleEndDate       null.Time `json:"sale_end_date"`
+	MaxPerTransaction null.Int  `json:"max_per_transaction"`
 }
 
 func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {

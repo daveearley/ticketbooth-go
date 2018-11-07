@@ -48,6 +48,7 @@ func (ec *eventHandlers) PublicGetByID(c *gin.Context) {
 			ID:                ticket.ID,
 			Title:             ticket.Title,
 			QuantityAvailable: qtyRemaining,
+			MaxPerTransaction: ticket.MaxPerTransaction,
 		})
 	}
 
