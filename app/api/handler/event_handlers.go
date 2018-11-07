@@ -39,6 +39,7 @@ func (ec *eventHandlers) PublicGetByID(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, err)
 	}
 
+	// todo - move to transformation layer
 	var tics []*response.PublicTicketResponse
 	for _, ticket := range tickets {
 		qtyRemaining, _ := ec.ticSrv.GetRemainingTicketQuantity(ticket)
