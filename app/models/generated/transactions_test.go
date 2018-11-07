@@ -1734,7 +1734,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `CustomerID`: `integer`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UpdatedAt`: `timestamp without time zone`}
+	transactionDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `CustomerID`: `integer`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UUID`: `uuid`, `UpdatedAt`: `timestamp without time zone`}
 	_                  = bytes.MinRead
 )
 

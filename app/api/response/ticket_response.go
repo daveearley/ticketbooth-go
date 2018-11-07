@@ -15,7 +15,6 @@ type TicketResponse struct {
 type PublicTicketResponse struct {
 	ID                int       `json:"id"`
 	Title             string    `json:"title"`
-	EventID           int       `json:"event_id"`
 	QuantityAvailable int       `json:"quantity_available"`
 	SaleStartDate     null.Time `json:"sale_start_date"`
 	SaleEndDate       null.Time `json:"sale_end_date"`
@@ -30,7 +29,6 @@ func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
 	return &PublicTicketResponse{
 		ID:                t.ID,
 		Title:             t.Title,
-		EventID:           t.EventID,
 		QuantityAvailable: t.InititalQuantityAvailable,
 	}
 }

@@ -35,12 +35,13 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	accountService := service.NewAccountService(accountRepo, userRepo)
 
 	// Controllers
-	authController := handler.NewAuthHandlers(authService)
-	ticketController := handler.NewTicketHandlers(ticketService, eventService)
-	eventController := handler.NewEventHandlers(eventService, ticketService)
-	accountController := handler.NewAccountHandlers(accountService)
+	authHandlers := handler.NewAuthHandlers(authService)
+	ticketHandlers := handler.NewTicketHandlers(ticketService, eventService)
+	eventHandlers := handler.NewEventHandlers(eventService, ticketService)
+	accountHandlers := handler.NewAccountHandlers(accountService)
+	transactionHandlers := handler.NewTransactionHandlers(ticketService, eventService)
 
-	server.POST("/login", authController.Login)
+	server.POST("/login", authHandlers.Login)
 
 	server.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
 	server.Use(middleware.DbTransaction(db))
@@ -51,15 +52,15 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiAuthGroup.Use(middleware.AuthorizeActions())
 
 		// Account routes
-		apiAuthGroup.POST("/accounts", accountController.CreateAccount)
-		apiAuthGroup.GET("/accounts/:account_id", accountController.GetById)
-		apiAuthGroup.DELETE("/accounts/:account_id", accountController.Delete)
+		apiAuthGroup.POST("/accounts", accountHandlers.CreateAccount)
+		apiAuthGroup.GET("/accounts/:account_id", accountHandlers.GetById)
+		apiAuthGroup.DELETE("/accounts/:account_id", accountHandlers.Delete)
 
 		// Event routes
-		apiAuthGroup.POST("/events", eventController.CreateEvent)
-		apiAuthGroup.GET("/events/:event_id", eventController.GetById)
-		apiAuthGroup.GET("/events", eventController.GetAll)
-		apiAuthGroup.DELETE("/events/:event_id", eventController.DeleteEvent)
+		apiAuthGroup.POST("/events", eventHandlers.CreateEvent)
+		apiAuthGroup.GET("/events/:event_id", eventHandlers.GetById)
+		apiAuthGroup.GET("/events", eventHandlers.GetAll)
+		apiAuthGroup.DELETE("/events/:event_id", eventHandlers.DeleteEvent)
 
 		// Attendees
 		// Create
@@ -69,11 +70,11 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		//
 
 		// Tickets
-		apiAuthGroup.POST("/events/:event_id/tickets", ticketController.CreateTicket)
-		apiAuthGroup.GET("/events/:event_id/tickets", ticketController.GetAll)
-		apiAuthGroup.GET("/events/:event_id/tickets/:ticket_id", ticketController.GetByID)
-		apiAuthGroup.DELETE("/events/:event_id/tickets/:ticket_id", ticketController.DeleteByID)
-		apiAuthGroup.POST("/tickets/:ticket_id/questions", ticketController.AddQuestion)
+		apiAuthGroup.POST("/events/:event_id/tickets", ticketHandlers.CreateTicket)
+		apiAuthGroup.GET("/events/:event_id/tickets", ticketHandlers.GetAll)
+		apiAuthGroup.GET("/events/:event_id/tickets/:ticket_id", ticketHandlers.GetByID)
+		apiAuthGroup.DELETE("/events/:event_id/tickets/:ticket_id", ticketHandlers.DeleteByID)
+		apiAuthGroup.POST("/tickets/:ticket_id/questions", ticketHandlers.AddQuestion)
 
 		// Transactions
 		// GetAll
@@ -85,7 +86,8 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 
 	apiPublicGroup := server.Group("/v1/public")
 	{
-		apiPublicGroup.GET("/events/:event_id", eventController.PublicGetByID)
+		apiPublicGroup.GET("/events/:event_id", eventHandlers.PublicGetByID)
+		apiPublicGroup.POST("/transaction", transactionHandlers.PublicCreateTransaction)
 
 		// 1. GET get event & tickets in single request
 		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time
