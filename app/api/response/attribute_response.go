@@ -13,11 +13,11 @@ type AttributeResponse struct {
 
 func TransformAttributes(c *gin.Context, attrs []*models.Attribute) interface{} {
 	var transformed []interface{}
-	for _, v := range attrs {
+	for _, attr := range attrs {
 		transformed = append(transformed, &AttributeResponse{
-			ID:    v.ID,
-			Name:  v.Name,
-			Value: v.Value,
+			ID:    attr.ID,
+			Name:  attr.Name,
+			Value: attr.Value,
 		})
 	}
 
