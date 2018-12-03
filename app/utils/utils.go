@@ -3,7 +3,13 @@ package utils
 import (
 	"golang.org/x/crypto/bcrypt"
 	"strconv"
+	"github.com/volatiletech/sqlboiler/types"
+	dec "github.com/ericlagergren/decimal"
 )
+
+func IntToDecimal(v int64) types.Decimal {
+	return types.NewDecimal(dec.New(v,2))
+}
 
 // Covert a string to an int
 func Str2int(str string) int {

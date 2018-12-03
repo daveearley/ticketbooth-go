@@ -21,58 +21,58 @@ import (
 
 // Attendee is an object representing the database table.
 type Attendee struct {
-	ID         int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CustomerID int       `boil:"customer_id" json:"customer_id" toml:"customer_id" yaml:"customer_id"`
-	TicketID   int       `boil:"ticket_id" json:"ticket_id" toml:"ticket_id" yaml:"ticket_id"`
-	Email      string    `boil:"email" json:"email" toml:"email" yaml:"email"`
-	Status     string    `boil:"status" json:"status" toml:"status" yaml:"status"`
-	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt  time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
-	EventID    int       `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
+	ID            int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	TransactionID int       `boil:"transaction_id" json:"transaction_id" toml:"transaction_id" yaml:"transaction_id"`
+	TicketID      int       `boil:"ticket_id" json:"ticket_id" toml:"ticket_id" yaml:"ticket_id"`
+	Email         string    `boil:"email" json:"email" toml:"email" yaml:"email"`
+	Status        string    `boil:"status" json:"status" toml:"status" yaml:"status"`
+	CreatedAt     time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt     time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt     time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	EventID       int       `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
 
 	R *attendeeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L attendeeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AttendeeColumns = struct {
-	ID         string
-	CustomerID string
-	TicketID   string
-	Email      string
-	Status     string
-	CreatedAt  string
-	UpdatedAt  string
-	DeletedAt  string
-	EventID    string
+	ID            string
+	TransactionID string
+	TicketID      string
+	Email         string
+	Status        string
+	CreatedAt     string
+	UpdatedAt     string
+	DeletedAt     string
+	EventID       string
 }{
-	ID:         "id",
-	CustomerID: "customer_id",
-	TicketID:   "ticket_id",
-	Email:      "email",
-	Status:     "status",
-	CreatedAt:  "created_at",
-	UpdatedAt:  "updated_at",
-	DeletedAt:  "deleted_at",
-	EventID:    "event_id",
+	ID:            "id",
+	TransactionID: "transaction_id",
+	TicketID:      "ticket_id",
+	Email:         "email",
+	Status:        "status",
+	CreatedAt:     "created_at",
+	UpdatedAt:     "updated_at",
+	DeletedAt:     "deleted_at",
+	EventID:       "event_id",
 }
 
 // AttendeeRels is where relationship names are stored.
 var AttendeeRels = struct {
-	Customer string
-	Ticket   string
-	Event    string
+	Ticket      string
+	Event       string
+	Transaction string
 }{
-	Customer: "Customer",
-	Ticket:   "Ticket",
-	Event:    "Event",
+	Ticket:      "Ticket",
+	Event:       "Event",
+	Transaction: "Transaction",
 }
 
 // attendeeR is where relationships are stored.
 type attendeeR struct {
-	Customer *Customer
-	Ticket   *Ticket
-	Event    *Event
+	Ticket      *Ticket
+	Event       *Event
+	Transaction *Transaction
 }
 
 // NewStruct creates a new relationship struct
@@ -84,8 +84,8 @@ func (*attendeeR) NewStruct() *attendeeR {
 type attendeeL struct{}
 
 var (
-	attendeeColumns               = []string{"id", "customer_id", "ticket_id", "email", "status", "created_at", "updated_at", "deleted_at", "event_id"}
-	attendeeColumnsWithoutDefault = []string{"customer_id", "ticket_id", "email", "status", "created_at", "updated_at", "deleted_at", "event_id"}
+	attendeeColumns               = []string{"id", "transaction_id", "ticket_id", "email", "status", "created_at", "updated_at", "deleted_at", "event_id"}
+	attendeeColumnsWithoutDefault = []string{"transaction_id", "ticket_id", "email", "status", "created_at", "updated_at", "deleted_at", "event_id"}
 	attendeeColumnsWithDefault    = []string{"id"}
 	attendeePrimaryKeyColumns     = []string{"id"}
 )
@@ -325,20 +325,6 @@ func (q attendeeQuery) Exists(exec boil.Executor) (bool, error) {
 	return count > 0, nil
 }
 
-// Customer pointed to by the foreign key.
-func (o *Attendee) Customer(mods ...qm.QueryMod) customerQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.CustomerID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Customers(queryMods...)
-	queries.SetFrom(query.Query, "\"customers\"")
-
-	return query
-}
-
 // Ticket pointed to by the foreign key.
 func (o *Attendee) Ticket(mods ...qm.QueryMod) ticketQuery {
 	queryMods := []qm.QueryMod{
@@ -367,99 +353,18 @@ func (o *Attendee) Event(mods ...qm.QueryMod) eventQuery {
 	return query
 }
 
-// LoadCustomer allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (attendeeL) LoadCustomer(e boil.Executor, singular bool, maybeAttendee interface{}, mods queries.Applicator) error {
-	var slice []*Attendee
-	var object *Attendee
-
-	if singular {
-		object = maybeAttendee.(*Attendee)
-	} else {
-		slice = *maybeAttendee.(*[]*Attendee)
+// Transaction pointed to by the foreign key.
+func (o *Attendee) Transaction(mods ...qm.QueryMod) transactionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.TransactionID),
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &attendeeR{}
-		}
-		args = append(args, object.CustomerID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &attendeeR{}
-			}
+	queryMods = append(queryMods, mods...)
 
-			for _, a := range args {
-				if a == obj.CustomerID {
-					continue Outer
-				}
-			}
+	query := Transactions(queryMods...)
+	queries.SetFrom(query.Query, "\"transactions\"")
 
-			args = append(args, obj.CustomerID)
-		}
-	}
-
-	query := NewQuery(qm.From(`customers`), qm.WhereIn(`id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.Query(e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Customer")
-	}
-
-	var resultSlice []*Customer
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Customer")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for customers")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for customers")
-	}
-
-	if len(attendeeAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Customer = foreign
-		if foreign.R == nil {
-			foreign.R = &customerR{}
-		}
-		foreign.R.Attendees = append(foreign.R.Attendees, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.CustomerID == foreign.ID {
-				local.R.Customer = foreign
-				if foreign.R == nil {
-					foreign.R = &customerR{}
-				}
-				foreign.R.Attendees = append(foreign.R.Attendees, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return query
 }
 
 // LoadTicket allows an eager lookup of values, cached into the
@@ -652,48 +557,96 @@ func (attendeeL) LoadEvent(e boil.Executor, singular bool, maybeAttendee interfa
 	return nil
 }
 
-// SetCustomer of the attendee to the related item.
-// Sets o.R.Customer to related.
-// Adds o to related.R.Attendees.
-func (o *Attendee) SetCustomer(exec boil.Executor, insert bool, related *Customer) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
+// LoadTransaction allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (attendeeL) LoadTransaction(e boil.Executor, singular bool, maybeAttendee interface{}, mods queries.Applicator) error {
+	var slice []*Attendee
+	var object *Attendee
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"attendees\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"customer_id"}),
-		strmangle.WhereClause("\"", "\"", 2, attendeePrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.CustomerID = related.ID
-	if o.R == nil {
-		o.R = &attendeeR{
-			Customer: related,
-		}
+	if singular {
+		object = maybeAttendee.(*Attendee)
 	} else {
-		o.R.Customer = related
+		slice = *maybeAttendee.(*[]*Attendee)
 	}
 
-	if related.R == nil {
-		related.R = &customerR{
-			Attendees: AttendeeSlice{o},
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &attendeeR{}
 		}
+		args = append(args, object.TransactionID)
 	} else {
-		related.R.Attendees = append(related.R.Attendees, o)
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &attendeeR{}
+			}
+
+			for _, a := range args {
+				if a == obj.TransactionID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.TransactionID)
+		}
+	}
+
+	query := NewQuery(qm.From(`transactions`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Transaction")
+	}
+
+	var resultSlice []*Transaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transactions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transactions")
+	}
+
+	if len(attendeeAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Transaction = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.Attendees = append(foreign.R.Attendees, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.TransactionID == foreign.ID {
+				local.R.Transaction = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.Attendees = append(foreign.R.Attendees, local)
+				break
+			}
+		}
 	}
 
 	return nil
@@ -784,6 +737,53 @@ func (o *Attendee) SetEvent(exec boil.Executor, insert bool, related *Event) err
 
 	if related.R == nil {
 		related.R = &eventR{
+			Attendees: AttendeeSlice{o},
+		}
+	} else {
+		related.R.Attendees = append(related.R.Attendees, o)
+	}
+
+	return nil
+}
+
+// SetTransaction of the attendee to the related item.
+// Sets o.R.Transaction to related.
+// Adds o to related.R.Attendees.
+func (o *Attendee) SetTransaction(exec boil.Executor, insert bool, related *Transaction) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"attendees\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"transaction_id"}),
+		strmangle.WhereClause("\"", "\"", 2, attendeePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.TransactionID = related.ID
+	if o.R == nil {
+		o.R = &attendeeR{
+			Transaction: related,
+		}
+	} else {
+		o.R.Transaction = related
+	}
+
+	if related.R == nil {
+		related.R = &transactionR{
 			Attendees: AttendeeSlice{o},
 		}
 	} else {

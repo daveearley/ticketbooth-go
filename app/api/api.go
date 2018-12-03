@@ -17,8 +17,8 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	server.Use(middleware.ErrorHandler())
 
 	// Health Check
-	server.GET("/healthcheck", func(context *gin.Context) {
-		response.StringResponse(context, "")
+	server.GET("/health", func(context *gin.Context) {
+		response.StringResponse(context, "I'm alive!👍👍👍")
 	})
 
 	// Repositories
@@ -27,23 +27,26 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	ticketRepo := repository.NewTicketRepository(db)
 	accountRepo := repository.NewAccountRepository(db)
 	questionRepo := repository.NewQuestionRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
 
 	// Services
 	authService := service.NewAuthService(userRepo, config)
 	eventService := service.NewEventService(eventRepo)
 	ticketService := service.NewTicketService(ticketRepo, questionRepo)
 	accountService := service.NewAccountService(accountRepo, userRepo)
+	transactionService := service.NewTransactionService(transactionRepo, ticketService)
 
-	// Controllers
+	// Handlers
 	authHandlers := handler.NewAuthHandlers(authService)
 	ticketHandlers := handler.NewTicketHandlers(ticketService, eventService)
 	eventHandlers := handler.NewEventHandlers(eventService, ticketService)
 	accountHandlers := handler.NewAccountHandlers(accountService)
-	transactionHandlers := handler.NewTransactionHandlers(ticketService, eventService)
+	transactionHandlers := handler.NewTransactionHandlers(transactionService)
 
-	server.POST("/login", authHandlers.Login)
+	server.POST("/v1/login", authHandlers.Login)
+	server.POST("/v1/accounts", accountHandlers.CreateAccount)
 
-	server.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo))
+	server.Use(middleware.PreloadModels(eventRepo, accountRepo, ticketRepo, transactionRepo))
 	server.Use(middleware.DbTransaction(db))
 
 	apiAuthGroup := server.Group("/v1")
@@ -52,7 +55,6 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiAuthGroup.Use(middleware.AuthorizeActions())
 
 		// Account routes
-		apiAuthGroup.POST("/accounts", accountHandlers.CreateAccount)
 		apiAuthGroup.GET("/accounts/:account_id", accountHandlers.GetById)
 		apiAuthGroup.DELETE("/accounts/:account_id", accountHandlers.Delete)
 
@@ -87,7 +89,9 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 	apiPublicGroup := server.Group("/v1/public")
 	{
 		apiPublicGroup.GET("/events/:event_id", eventHandlers.PublicGetByID)
-		apiPublicGroup.POST("/transaction", transactionHandlers.PublicCreateTransaction)
+		apiPublicGroup.POST("/events/:event_id/transaction", transactionHandlers.PublicCreateTransaction)
+		apiPublicGroup.POST("/events/:event_id/transaction/:transaction_uuid", transactionHandlers.PublicFinalizeTransaction)
+
 
 		// 1. GET get event & tickets in single request
 		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time

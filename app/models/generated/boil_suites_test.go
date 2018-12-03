@@ -259,9 +259,9 @@ func TestInsert(t *testing.T) {
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
 	t.Run("AccountUserToAccountUsingAccount", testAccountUserToOneAccountUsingAccount)
-	t.Run("AttendeeToCustomerUsingCustomer", testAttendeeToOneCustomerUsingCustomer)
 	t.Run("AttendeeToTicketUsingTicket", testAttendeeToOneTicketUsingTicket)
 	t.Run("AttendeeToEventUsingEvent", testAttendeeToOneEventUsingEvent)
+	t.Run("AttendeeToTransactionUsingTransaction", testAttendeeToOneTransactionUsingTransaction)
 	t.Run("CustomerToTransactionUsingTransaction", testCustomerToOneTransactionUsingTransaction)
 	t.Run("CustomerToEventUsingEvent", testCustomerToOneEventUsingEvent)
 	t.Run("EventToAccountUsingAccount", testEventToOneAccountUsingAccount)
@@ -276,7 +276,6 @@ func TestToOne(t *testing.T) {
 	t.Run("TransactionItemToTransactionUsingTransaction", testTransactionItemToOneTransactionUsingTransaction)
 	t.Run("TransactionItemToTicketUsingTicket", testTransactionItemToOneTicketUsingTicket)
 	t.Run("TransactionToEventUsingEvent", testTransactionToOneEventUsingEvent)
-	t.Run("TransactionToCustomerUsingCustomer", testTransactionToOneCustomerUsingCustomer)
 	t.Run("UserToAccountUsingAccount", testUserToOneAccountUsingAccount)
 }
 
@@ -293,8 +292,6 @@ func TestToMany(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManyEvents)
 	t.Run("AttributeToTickets", testAttributeToManyTickets)
 	t.Run("AttributeToTransactions", testAttributeToManyTransactions)
-	t.Run("CustomerToAttendees", testCustomerToManyAttendees)
-	t.Run("CustomerToTransactions", testCustomerToManyTransactions)
 	t.Run("DiscountCodeToTransactionDiscountCodes", testDiscountCodeToManyTransactionDiscountCodes)
 	t.Run("EventToAttendees", testEventToManyAttendees)
 	t.Run("EventToCustomers", testEventToManyCustomers)
@@ -311,6 +308,7 @@ func TestToMany(t *testing.T) {
 	t.Run("TicketToQuestions", testTicketToManyQuestions)
 	t.Run("TicketToTicketReservations", testTicketToManyTicketReservations)
 	t.Run("TicketToTransactionItems", testTicketToManyTransactionItems)
+	t.Run("TransactionToAttendees", testTransactionToManyAttendees)
 	t.Run("TransactionToCustomers", testTransactionToManyCustomers)
 	t.Run("TransactionToTicketReservations", testTransactionToManyTicketReservations)
 	t.Run("TransactionToAttributes", testTransactionToManyAttributes)
@@ -323,9 +321,9 @@ func TestToMany(t *testing.T) {
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
 	t.Run("AccountUserToAccountUsingAccountUsers", testAccountUserToOneSetOpAccountUsingAccount)
-	t.Run("AttendeeToCustomerUsingAttendees", testAttendeeToOneSetOpCustomerUsingCustomer)
 	t.Run("AttendeeToTicketUsingAttendees", testAttendeeToOneSetOpTicketUsingTicket)
 	t.Run("AttendeeToEventUsingAttendees", testAttendeeToOneSetOpEventUsingEvent)
+	t.Run("AttendeeToTransactionUsingAttendees", testAttendeeToOneSetOpTransactionUsingTransaction)
 	t.Run("CustomerToTransactionUsingCustomers", testCustomerToOneSetOpTransactionUsingTransaction)
 	t.Run("CustomerToEventUsingCustomers", testCustomerToOneSetOpEventUsingEvent)
 	t.Run("EventToAccountUsingEvents", testEventToOneSetOpAccountUsingAccount)
@@ -340,15 +338,12 @@ func TestToOneSet(t *testing.T) {
 	t.Run("TransactionItemToTransactionUsingTransactionItems", testTransactionItemToOneSetOpTransactionUsingTransaction)
 	t.Run("TransactionItemToTicketUsingTransactionItems", testTransactionItemToOneSetOpTicketUsingTicket)
 	t.Run("TransactionToEventUsingTransactions", testTransactionToOneSetOpEventUsingEvent)
-	t.Run("TransactionToCustomerUsingTransactions", testTransactionToOneSetOpCustomerUsingCustomer)
 	t.Run("UserToAccountUsingUsers", testUserToOneSetOpAccountUsingAccount)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {
-	t.Run("TransactionToCustomerUsingTransactions", testTransactionToOneRemoveOpCustomerUsingCustomer)
-}
+func TestToOneRemove(t *testing.T) {}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -367,8 +362,6 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManyAddOpEvents)
 	t.Run("AttributeToTickets", testAttributeToManyAddOpTickets)
 	t.Run("AttributeToTransactions", testAttributeToManyAddOpTransactions)
-	t.Run("CustomerToAttendees", testCustomerToManyAddOpAttendees)
-	t.Run("CustomerToTransactions", testCustomerToManyAddOpTransactions)
 	t.Run("DiscountCodeToTransactionDiscountCodes", testDiscountCodeToManyAddOpTransactionDiscountCodes)
 	t.Run("EventToAttendees", testEventToManyAddOpAttendees)
 	t.Run("EventToCustomers", testEventToManyAddOpCustomers)
@@ -385,6 +378,7 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("TicketToQuestions", testTicketToManyAddOpQuestions)
 	t.Run("TicketToTicketReservations", testTicketToManyAddOpTicketReservations)
 	t.Run("TicketToTransactionItems", testTicketToManyAddOpTransactionItems)
+	t.Run("TransactionToAttendees", testTransactionToManyAddOpAttendees)
 	t.Run("TransactionToCustomers", testTransactionToManyAddOpCustomers)
 	t.Run("TransactionToTicketReservations", testTransactionToManyAddOpTicketReservations)
 	t.Run("TransactionToAttributes", testTransactionToManyAddOpAttributes)
@@ -399,7 +393,6 @@ func TestToManySet(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManySetOpEvents)
 	t.Run("AttributeToTickets", testAttributeToManySetOpTickets)
 	t.Run("AttributeToTransactions", testAttributeToManySetOpTransactions)
-	t.Run("CustomerToTransactions", testCustomerToManySetOpTransactions)
 	t.Run("EventToAttributes", testEventToManySetOpAttributes)
 	t.Run("EventToQuestions", testEventToManySetOpQuestions)
 	t.Run("QuestionToEvents", testQuestionToManySetOpEvents)
@@ -415,7 +408,6 @@ func TestToManyRemove(t *testing.T) {
 	t.Run("AttributeToEvents", testAttributeToManyRemoveOpEvents)
 	t.Run("AttributeToTickets", testAttributeToManyRemoveOpTickets)
 	t.Run("AttributeToTransactions", testAttributeToManyRemoveOpTransactions)
-	t.Run("CustomerToTransactions", testCustomerToManyRemoveOpTransactions)
 	t.Run("EventToAttributes", testEventToManyRemoveOpAttributes)
 	t.Run("EventToQuestions", testEventToManyRemoveOpQuestions)
 	t.Run("QuestionToEvents", testQuestionToManyRemoveOpEvents)

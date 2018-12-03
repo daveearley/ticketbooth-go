@@ -6,9 +6,12 @@ import (
 	"github.com/daveearley/ticketbooth/database"
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/daveearley/ticketbooth/app"
 )
 
 func main() {
+	binding.Validator = new(app.DefaultValidator)
 	server := gin.Default()
 	config := configs.LoadConfig()
 
@@ -17,6 +20,7 @@ func main() {
 	}
 
 	db := database.InitDb(config)
+
 	defer db.Close()
 
 	api.BootstrapAndRegisterRoutes(server, db, config)

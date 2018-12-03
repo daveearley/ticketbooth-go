@@ -7,7 +7,12 @@ import (
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
+	"time"
 )
+
+const defaultTransactionTimeout = 10 * time.Minute
+
+type TicketQuantityMap map[int]int
 
 type TicketService interface {
 	Find(id int) (*models.Ticket, error)
@@ -17,6 +22,7 @@ type TicketService interface {
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 	GetRemainingTicketQuantity(ticket *models.Ticket) (int, error)
 	FindByEventID(ticketID int) ([]*models.Ticket, error)
+	ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) error
 }
 
 type ticketService struct {
@@ -34,6 +40,20 @@ func (s *ticketService) FindByEventID(ticketID int) ([]*models.Ticket, error) {
 
 func (s *ticketService) Find(id int) (*models.Ticket, error) {
 	return s.er.GetByID(id)
+}
+
+func (s *ticketService) ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) error {
+	var reserved []*models.TicketReservation
+	for ticID, qty := range ticketQuantityMap {
+		reserved = append(reserved, &models.TicketReservation{
+			TicketID:       ticID,
+			TicketQuantity: qty,
+			TransactionID:  trans.ID,
+			ReservedUntil:  time.Now().Add(defaultTransactionTimeout),
+		})
+	}
+
+	return s.er.CreateReservedTickets(reserved)
 }
 
 func (s *ticketService) GetRemainingTicketQuantity(ticket *models.Ticket) (int, error) {

@@ -481,6 +481,84 @@ func testTransactionsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testTransactionToManyAttendees(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Transaction
+	var b, c Attendee
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, attendeeDBTypes, false, attendeeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, attendeeDBTypes, false, attendeeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.TransactionID = a.ID
+	c.TransactionID = a.ID
+
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	attendee, err := a.Attendees().All(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range attendee {
+		if v.TransactionID == b.TransactionID {
+			bFound = true
+		}
+		if v.TransactionID == c.TransactionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := TransactionSlice{&a}
+	if err = a.L.LoadAttendees(tx, false, (*[]*Transaction)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Attendees); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Attendees = nil
+	if err = a.L.LoadAttendees(tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Attendees); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", attendee)
+	}
+}
+
 func testTransactionToManyCustomers(t *testing.T) {
 	var err error
 
@@ -877,6 +955,80 @@ func testTransactionToManyTransactionItems(t *testing.T) {
 	}
 }
 
+func testTransactionToManyAddOpAttendees(t *testing.T) {
+	var err error
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var a Transaction
+	var b, c, d, e Attendee
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Attendee{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, attendeeDBTypes, false, strmangle.SetComplement(attendeePrimaryKeyColumns, attendeeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Attendee{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddAttendees(tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, first.TransactionID)
+		}
+		if a.ID != second.TransactionID {
+			t.Error("foreign key was wrong value", a.ID, second.TransactionID)
+		}
+
+		if first.R.Transaction != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Transaction != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Attendees[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Attendees[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Attendees().Count(tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testTransactionToManyAddOpCustomers(t *testing.T) {
 	var err error
 
@@ -1449,57 +1601,6 @@ func testTransactionToOneEventUsingEvent(t *testing.T) {
 	}
 }
 
-func testTransactionToOneCustomerUsingCustomer(t *testing.T) {
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var local Transaction
-	var foreign Customer
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, transactionDBTypes, true, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, customerDBTypes, false, customerColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Customer struct: %s", err)
-	}
-
-	if err := foreign.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&local.CustomerID, foreign.ID)
-	if err := local.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Customer().One(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !queries.Equal(check.ID, foreign.ID) {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := TransactionSlice{&local}
-	if err = local.L.LoadCustomer(tx, false, (*[]*Transaction)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Customer == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Customer = nil
-	if err = local.L.LoadCustomer(tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Customer == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testTransactionToOneSetOpEventUsingEvent(t *testing.T) {
 	var err error
 
@@ -1554,112 +1655,6 @@ func testTransactionToOneSetOpEventUsingEvent(t *testing.T) {
 		if a.EventID != x.ID {
 			t.Error("foreign key was wrong value", a.EventID, x.ID)
 		}
-	}
-}
-func testTransactionToOneSetOpCustomerUsingCustomer(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Transaction
-	var b, c Customer
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Customer{&b, &c} {
-		err = a.SetCustomer(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Customer != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Transactions[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if !queries.Equal(a.CustomerID, x.ID) {
-			t.Error("foreign key was wrong value", a.CustomerID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.CustomerID))
-		reflect.Indirect(reflect.ValueOf(&a.CustomerID)).Set(zero)
-
-		if err = a.Reload(tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if !queries.Equal(a.CustomerID, x.ID) {
-			t.Error("foreign key was wrong value", a.CustomerID, x.ID)
-		}
-	}
-}
-
-func testTransactionToOneRemoveOpCustomerUsingCustomer(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Transaction
-	var b Customer
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, customerDBTypes, false, strmangle.SetComplement(customerPrimaryKeyColumns, customerColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetCustomer(tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveCustomer(tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Customer().Count(tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Customer != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.CustomerID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Transactions) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -1734,7 +1729,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `CustomerID`: `integer`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UUID`: `uuid`, `UpdatedAt`: `timestamp without time zone`}
+	transactionDBTypes = map[string]string{`CompanyName`: `character varying`, `CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `Email`: `character varying`, `EventID`: `integer`, `FirstName`: `character varying`, `ID`: `integer`, `LastName`: `character varying`, `Metadata`: `jsonb`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UUID`: `uuid`, `UpdatedAt`: `timestamp without time zone`}
 	_                  = bytes.MinRead
 )
 

@@ -25,7 +25,7 @@ func NewAuthService(r repository.UserRepository, c *configs.Config) AuthService 
 
 // ValidateLoginAndReturnJwtToken accepts returns a JWT token when a valid email/password combo is passed
 func (s *userService) ValidateLoginAndReturnJwtToken(req *request.Login) (string, error) {
-	u, err := s.ur.FindByEmail(req.Username)
+	u, err := s.ur.FindByEmail(req.Email)
 
 	if err != nil {
 		return "", err

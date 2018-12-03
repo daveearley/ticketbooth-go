@@ -1,14 +1,115 @@
 package service
 
-import "github.com/daveearley/ticketbooth/app/repository"
+import (
+	"github.com/daveearley/ticketbooth/app/repository"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/pkg/errors"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/utils"
+	"net/http"
+)
 
 type transactionSrv struct {
 	transRepo repository.TransactionRepository
+	ticketSrv TicketService
 }
 
 type TransactionService interface {
+	ValidateTicketRequest(req *request.CreateTransaction) ([]*models.Ticket, error)
+	CreateTransaction(req *request.CreateTransaction, event *models.Event) (*models.Transaction, []*models.Ticket, error)
+	GetTicketsFromRequest(req *request.CreateTransaction) ([]*models.Ticket, error)
 }
 
-func NewTransactionService(transRepo repository.TransactionRepository) *transactionSrv {
-	return &transactionSrv{transRepo}
+func NewTransactionService(transRepo repository.TransactionRepository, ticServ TicketService) *transactionSrv {
+	return &transactionSrv{transRepo, ticServ}
+}
+
+func (s *transactionSrv) CreateTransaction(req *request.CreateTransaction, event *models.Event) (*models.Transaction, []*models.Ticket, error) {
+	tickets, err := s.ValidateTicketRequest(req)
+
+	if err != nil {
+		return nil, nil, Error{http.StatusBadRequest, err}
+	}
+
+	ticQtyMap := make(TicketQuantityMap)
+	for _, v := range req.Tickets {
+		ticQtyMap[v.ID] = v.Quantity
+	}
+
+	trans, err := s.transRepo.Create(&models.Transaction{
+		EventID: event.ID,
+		// SqlBoiler panics if these defaults are not set.
+		// Likely a bug in the library related to decimal types.
+		// Todo - investigate
+		Total:         utils.IntToDecimal(0.00),
+		TotalDiscount: utils.IntToDecimal(0.00),
+		TotalTax:      utils.IntToDecimal(0.00),
+	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = s.ticketSrv.ReserveTickets(ticQtyMap, trans)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return trans, tickets, nil
+}
+
+func (s *transactionSrv) FinalizeTransaction() {
+
+}
+
+func (s *transactionSrv) GetLineItems() {
+	// ticket qty * (price * tax)
+	// ticket title
+	//
+}
+
+func (s *transactionSrv) ValidateTicketRequest(req *request.CreateTransaction) ([]*models.Ticket, error) {
+	var tickets []*models.Ticket
+	for _, v := range req.Tickets {
+		tic, err := s.ticketSrv.Find(v.ID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		remaining, err := s.ticketSrv.GetRemainingTicketQuantity(tic)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !tic.MaxPerTransaction.IsZero() && v.Quantity > tic.MaxPerTransaction.Int {
+			return nil, Error{http.StatusUnprocessableEntity, errors.New("Too many selected")}
+		}
+
+		if v.Quantity > remaining {
+			return nil, errors.New("Unavailable quantity")
+		}
+
+		tickets = append(tickets, tic)
+	}
+
+	return tickets, nil
+}
+
+//GetTicketsFromRequest
+func (s *transactionSrv) GetTicketsFromRequest(req *request.CreateTransaction) ([]*models.Ticket, error) {
+	var tickets []*models.Ticket
+	for _, v := range req.Tickets {
+		tic, err := s.ticketSrv.Find(v.ID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tickets = append(tickets, tic)
+	}
+
+	return tickets, nil
 }

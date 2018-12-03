@@ -664,7 +664,7 @@ func (attributeL) LoadTransactions(e boil.Executor, singular bool, maybeAttribut
 		one := new(Transaction)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.EventID, &one.CustomerID, &one.Total, &one.TotalTax, &one.TotalDiscount, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.UUID, &localJoinCol)
+		err = results.Scan(&one.ID, &one.EventID, &one.Total, &one.TotalTax, &one.TotalDiscount, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.UUID, &one.Metadata, &one.FirstName, &one.LastName, &one.Email, &one.CompanyName, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for transactions")
 		}

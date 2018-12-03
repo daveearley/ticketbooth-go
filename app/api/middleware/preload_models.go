@@ -15,12 +15,23 @@ func PreloadModels(
 	eventRepo repository.EventRepository,
 	accountRepo repository.AccountRepository,
 	ticketRepo repository.TicketRepository,
+	tranRepo repository.TransactionRepository,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		for _, v := range c.Params {
 			id := getID(&v)
 			fmt.Println(v.Key)
 			switch v.Key {
+			case "transaction_uuid":
+				// todo - limit this to only recent/unfinalized transactions
+				transaction, err := tranRepo.FindByUUID(v.Value)
+
+				if err != nil {
+					response.NotFoundResponse(c)
+					return
+				}
+
+				c.Set("transaction", transaction)
 			case "ticket_id":
 				ticket, err := ticketRepo.GetByID(id)
 				if err != nil {

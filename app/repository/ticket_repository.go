@@ -17,6 +17,7 @@ type TicketRepository interface {
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 	ListQuestions(ticket *models.Ticket) ([]*models.Question, error)
 	GetReservedTicketQuantity(ticket *models.Ticket) (int, error)
+	CreateReservedTickets(resTickets []*models.TicketReservation) (err error)
 	FindByEventID(ticketID int) ([]*models.Ticket, error)
 }
 
@@ -29,7 +30,7 @@ func NewTicketRepository(db *sql.DB) TicketRepository {
 }
 
 func (r *ticketRepository) GetByID(id int) (*models.Ticket, error) {
-	return models.FindTicket(r.db, id)
+	return models.Tickets(qm.Where("id=?", id), qm.Load("Questions.Question		Options")).One(r.db)
 }
 
 func (r *ticketRepository) DeleteByID(id int) error {
@@ -92,4 +93,12 @@ func (r *ticketRepository) FindByEventID(eventId int) ([]*models.Ticket, error) 
 
 func (r *ticketRepository) ListQuestions(ticket *models.Ticket) ([]*models.Question, error) {
 	return ticket.Questions().All(r.db)
+}
+
+func (r *ticketRepository) CreateReservedTickets(resTickets []*models.TicketReservation) (err error) {
+	for _, res := range resTickets {
+		err = res.Insert(r.db, boil.Infer())
+	}
+
+	return err
 }

@@ -25,14 +25,18 @@ import (
 type Transaction struct {
 	ID            int           `boil:"id" json:"id" toml:"id" yaml:"id"`
 	EventID       int           `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
-	CustomerID    null.Int      `boil:"customer_id" json:"customer_id,omitempty" toml:"customer_id" yaml:"customer_id,omitempty"`
 	Total         types.Decimal `boil:"total" json:"total" toml:"total" yaml:"total"`
 	TotalTax      types.Decimal `boil:"total_tax" json:"total_tax" toml:"total_tax" yaml:"total_tax"`
 	TotalDiscount types.Decimal `boil:"total_discount" json:"total_discount" toml:"total_discount" yaml:"total_discount"`
 	CreatedAt     time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt     time.Time     `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	DeletedAt     time.Time     `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
-	UUID          string        `boil:"uuid" json:"uuid" toml:"uuid" yaml:"uuid"`
+	UUID          null.String   `boil:"uuid" json:"uuid,omitempty" toml:"uuid" yaml:"uuid,omitempty"`
+	Metadata      null.JSON     `boil:"metadata" json:"metadata,omitempty" toml:"metadata" yaml:"metadata,omitempty"`
+	FirstName     null.String   `boil:"first_name" json:"first_name,omitempty" toml:"first_name" yaml:"first_name,omitempty"`
+	LastName      null.String   `boil:"last_name" json:"last_name,omitempty" toml:"last_name" yaml:"last_name,omitempty"`
+	Email         null.String   `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	CompanyName   null.String   `boil:"company_name" json:"company_name,omitempty" toml:"company_name" yaml:"company_name,omitempty"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,7 +45,6 @@ type Transaction struct {
 var TransactionColumns = struct {
 	ID            string
 	EventID       string
-	CustomerID    string
 	Total         string
 	TotalTax      string
 	TotalDiscount string
@@ -49,10 +52,14 @@ var TransactionColumns = struct {
 	UpdatedAt     string
 	DeletedAt     string
 	UUID          string
+	Metadata      string
+	FirstName     string
+	LastName      string
+	Email         string
+	CompanyName   string
 }{
 	ID:            "id",
 	EventID:       "event_id",
-	CustomerID:    "customer_id",
 	Total:         "total",
 	TotalTax:      "total_tax",
 	TotalDiscount: "total_discount",
@@ -60,12 +67,17 @@ var TransactionColumns = struct {
 	UpdatedAt:     "updated_at",
 	DeletedAt:     "deleted_at",
 	UUID:          "uuid",
+	Metadata:      "metadata",
+	FirstName:     "first_name",
+	LastName:      "last_name",
+	Email:         "email",
+	CompanyName:   "company_name",
 }
 
 // TransactionRels is where relationship names are stored.
 var TransactionRels = struct {
 	Event                    string
-	Customer                 string
+	Attendees                string
 	Customers                string
 	TicketReservations       string
 	Attributes               string
@@ -73,7 +85,7 @@ var TransactionRels = struct {
 	TransactionItems         string
 }{
 	Event:                    "Event",
-	Customer:                 "Customer",
+	Attendees:                "Attendees",
 	Customers:                "Customers",
 	TicketReservations:       "TicketReservations",
 	Attributes:               "Attributes",
@@ -84,7 +96,7 @@ var TransactionRels = struct {
 // transactionR is where relationships are stored.
 type transactionR struct {
 	Event                    *Event
-	Customer                 *Customer
+	Attendees                AttendeeSlice
 	Customers                CustomerSlice
 	TicketReservations       TicketReservationSlice
 	Attributes               AttributeSlice
@@ -101,9 +113,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "event_id", "customer_id", "total", "total_tax", "total_discount", "created_at", "updated_at", "deleted_at", "uuid"}
-	transactionColumnsWithoutDefault = []string{"event_id", "customer_id", "total", "total_tax", "total_discount", "created_at", "updated_at", "deleted_at"}
-	transactionColumnsWithDefault    = []string{"id", "uuid"}
+	transactionColumns               = []string{"id", "event_id", "total", "total_tax", "total_discount", "created_at", "updated_at", "deleted_at", "uuid", "metadata", "first_name", "last_name", "email", "company_name"}
+	transactionColumnsWithoutDefault = []string{"event_id", "created_at", "updated_at", "deleted_at", "metadata", "first_name", "last_name", "email", "company_name"}
+	transactionColumnsWithDefault    = []string{"id", "total", "total_tax", "total_discount", "uuid"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -356,16 +368,23 @@ func (o *Transaction) Event(mods ...qm.QueryMod) eventQuery {
 	return query
 }
 
-// Customer pointed to by the foreign key.
-func (o *Transaction) Customer(mods ...qm.QueryMod) customerQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.CustomerID),
+// Attendees retrieves all the attendee's Attendees with an executor.
+func (o *Transaction) Attendees(mods ...qm.QueryMod) attendeeQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
 	}
 
-	queryMods = append(queryMods, mods...)
+	queryMods = append(queryMods,
+		qm.Where("\"attendees\".\"transaction_id\"=?", o.ID),
+	)
 
-	query := Customers(queryMods...)
-	queries.SetFrom(query.Query, "\"customers\"")
+	query := Attendees(queryMods...)
+	queries.SetFrom(query.Query, "\"attendees\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"attendees\".*"})
+	}
 
 	return query
 }
@@ -571,9 +590,9 @@ func (transactionL) LoadEvent(e boil.Executor, singular bool, maybeTransaction i
 	return nil
 }
 
-// LoadCustomer allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (transactionL) LoadCustomer(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
+// LoadAttendees allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (transactionL) LoadAttendees(e boil.Executor, singular bool, maybeTransaction interface{}, mods queries.Applicator) error {
 	var slice []*Transaction
 	var object *Transaction
 
@@ -588,7 +607,7 @@ func (transactionL) LoadCustomer(e boil.Executor, singular bool, maybeTransactio
 		if object.R == nil {
 			object.R = &transactionR{}
 		}
-		args = append(args, object.CustomerID)
+		args = append(args, object.ID)
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -597,67 +616,63 @@ func (transactionL) LoadCustomer(e boil.Executor, singular bool, maybeTransactio
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.CustomerID) {
+				if a == obj.ID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.CustomerID)
+			args = append(args, obj.ID)
 		}
 	}
 
-	query := NewQuery(qm.From(`customers`), qm.WhereIn(`id in ?`, args...))
+	query := NewQuery(qm.From(`attendees`), qm.WhereIn(`transaction_id in ?`, args...))
 	if mods != nil {
 		mods.Apply(query)
 	}
 
 	results, err := query.Query(e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load Customer")
+		return errors.Wrap(err, "failed to eager load attendees")
 	}
 
-	var resultSlice []*Customer
+	var resultSlice []*Attendee
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Customer")
+		return errors.Wrap(err, "failed to bind eager loaded slice attendees")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for customers")
+		return errors.Wrap(err, "failed to close results in eager load on attendees")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for customers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for attendees")
 	}
 
-	if len(transactionAfterSelectHooks) != 0 {
+	if len(attendeeAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(e); err != nil {
 				return err
 			}
 		}
 	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
 	if singular {
-		foreign := resultSlice[0]
-		object.R.Customer = foreign
-		if foreign.R == nil {
-			foreign.R = &customerR{}
+		object.R.Attendees = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &attendeeR{}
+			}
+			foreign.R.Transaction = object
 		}
-		foreign.R.Transactions = append(foreign.R.Transactions, object)
 		return nil
 	}
 
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.CustomerID, foreign.ID) {
-				local.R.Customer = foreign
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.TransactionID {
+				local.R.Attendees = append(local.R.Attendees, foreign)
 				if foreign.R == nil {
-					foreign.R = &customerR{}
+					foreign.R = &attendeeR{}
 				}
-				foreign.R.Transactions = append(foreign.R.Transactions, local)
+				foreign.R.Transaction = local
 				break
 			}
 		}
@@ -1188,80 +1203,55 @@ func (o *Transaction) SetEvent(exec boil.Executor, insert bool, related *Event) 
 	return nil
 }
 
-// SetCustomer of the transaction to the related item.
-// Sets o.R.Customer to related.
-// Adds o to related.R.Transactions.
-func (o *Transaction) SetCustomer(exec boil.Executor, insert bool, related *Customer) error {
+// AddAttendees adds the given related objects to the existing relationships
+// of the transaction, optionally inserting them as new records.
+// Appends related to o.R.Attendees.
+// Sets related.R.Transaction appropriately.
+func (o *Transaction) AddAttendees(exec boil.Executor, insert bool, related ...*Attendee) error {
 	var err error
-	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+	for _, rel := range related {
+		if insert {
+			rel.TransactionID = o.ID
+			if err = rel.Insert(exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"attendees\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"transaction_id"}),
+				strmangle.WhereClause("\"", "\"", 2, attendeePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.DebugMode {
+				fmt.Fprintln(boil.DebugWriter, updateQuery)
+				fmt.Fprintln(boil.DebugWriter, values)
+			}
+
+			if _, err = exec.Exec(updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TransactionID = o.ID
 		}
 	}
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"transactions\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"customer_id"}),
-		strmangle.WhereClause("\"", "\"", 2, transactionPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.CustomerID, related.ID)
 	if o.R == nil {
 		o.R = &transactionR{
-			Customer: related,
+			Attendees: related,
 		}
 	} else {
-		o.R.Customer = related
+		o.R.Attendees = append(o.R.Attendees, related...)
 	}
 
-	if related.R == nil {
-		related.R = &customerR{
-			Transactions: TransactionSlice{o},
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &attendeeR{
+				Transaction: o,
+			}
+		} else {
+			rel.R.Transaction = o
 		}
-	} else {
-		related.R.Transactions = append(related.R.Transactions, o)
-	}
-
-	return nil
-}
-
-// RemoveCustomer relationship.
-// Sets o.R.Customer to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Transaction) RemoveCustomer(exec boil.Executor, related *Customer) error {
-	var err error
-
-	queries.SetScanner(&o.CustomerID, nil)
-	if _, err = o.Update(exec, boil.Whitelist("customer_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.R.Customer = nil
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Transactions {
-		if queries.Equal(o.CustomerID, ri.CustomerID) {
-			continue
-		}
-
-		ln := len(related.R.Transactions)
-		if ln > 1 && i < ln-1 {
-			related.R.Transactions[i] = related.R.Transactions[ln-1]
-		}
-		related.R.Transactions = related.R.Transactions[:ln-1]
-		break
 	}
 	return nil
 }
