@@ -35,7 +35,7 @@ func NewTicketService(repository repository.TicketRepository, qRepository reposi
 }
 
 func (s *ticketService) FindByEventID(ticketID int) ([]*models.Ticket, error) {
-	return s.er.FindByEventID(ticketID)
+	return s.er.GetByEventID(ticketID)
 }
 
 func (s *ticketService) Find(id int) (*models.Ticket, error) {
@@ -73,6 +73,7 @@ func (s *ticketService) Delete(id int) error {
 }
 
 func (s *ticketService) Create(req request.CreateTicket, event *models.Event) (*models.Ticket, error) {
+	// todo handle MaxPerTransaction always being saved to DB as 0
 	ticket := &models.Ticket{
 		Title:                     req.Title,
 		SaleStartDate:             null.NewTime(req.SaleStartDate, true),
@@ -91,7 +92,9 @@ func (s *ticketService) Create(req request.CreateTicket, event *models.Event) (*
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(ticket, MapToAttributes(&req.Attributes))
+		if err = s.er.SetAttributes(ticket, MapToAttributes(&req.Attributes)); err != nil {
+			return nil, err
+		}
 	}
 
 	return ticket, nil
@@ -105,7 +108,6 @@ func (s *ticketService) CreateQuestion(req request.CreateQuestion, ticket *model
 	}
 
 	err := s.er.SetQuestion(ticket, question)
-
 	if err != nil {
 		return nil, err
 	}

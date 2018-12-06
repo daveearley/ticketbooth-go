@@ -65,7 +65,7 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiAuthGroup.DELETE("/events/:event_id", eventHandlers.DeleteEvent)
 
 		// Attendees
-		// Create
+		// Store
 		// GetAll
 		// GetByID
 		// Delete
@@ -81,7 +81,7 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		// Transactions
 		// GetAll
 		// Delete
-		// Create
+		// Store
 		// GetOne
 
 	}
@@ -91,7 +91,6 @@ func BootstrapAndRegisterRoutes(server *gin.Engine, db *sql.DB, config *configs.
 		apiPublicGroup.GET("/events/:event_id", eventHandlers.PublicGetByID)
 		apiPublicGroup.POST("/events/:event_id/transaction", transactionHandlers.PublicCreateTransaction)
 		apiPublicGroup.POST("/events/:event_id/transaction/:transaction_uuid", transactionHandlers.PublicFinalizeTransaction)
-
 
 		// 1. GET get event & tickets in single request
 		// 2. POST reserve tickets & return transaction ID, ticket questions etc., expiry time

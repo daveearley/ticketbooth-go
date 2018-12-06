@@ -1,15 +1,25 @@
 package app
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
-	"fmt"
-	"crypto/sha1"
+)
+
+const (
+	EventResource       = "event"
+	AttendeeResource    = "attendee"
+	QuestionResource    = "question"
+	TransactionResource = "transaction"
+	AccountResource     = "account"
+	UserResource        = "user"
+	TicketResource      = "ticket"
 )
 
 // GetUserFromContext extracts the authenicated user from the gin context
 func GetUserFromContext(c *gin.Context) *models.User {
-	user, exists := c.Get("auth_user")
+	user, exists := c.Get(UserResource)
 
 	if !exists {
 		return nil
@@ -20,10 +30,9 @@ func GetUserFromContext(c *gin.Context) *models.User {
 
 //IsUserAuthenticated checks if a user session exists
 func IsUserAuthenticated(c *gin.Context) bool {
-	_, exists := c.Get("auth_user")
+	_, exists := c.Get(UserResource)
 	return exists
 }
-
 
 // GetUniqueUserID returns an MD5 hash of a user's user agent and IP address.
 func GetUniqueUserID(c *gin.Context) string {

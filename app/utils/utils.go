@@ -1,14 +1,14 @@
 package utils
 
 import (
+	dec "github.com/ericlagergren/decimal"
+	"github.com/volatiletech/sqlboiler/types"
 	"golang.org/x/crypto/bcrypt"
 	"strconv"
-	"github.com/volatiletech/sqlboiler/types"
-	dec "github.com/ericlagergren/decimal"
 )
 
 func IntToDecimal(v int64) types.Decimal {
-	return types.NewDecimal(dec.New(v,2))
+	return types.NewDecimal(dec.New(v, 2))
 }
 
 // Covert a string to an int

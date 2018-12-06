@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api"
 	"github.com/daveearley/ticketbooth/configs"
 	"github.com/daveearley/ticketbooth/database"
 	"github.com/gin-gonic/gin"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/daveearley/ticketbooth/app"
+	"github.com/volatiletech/sqlboiler/boil"
 )
 
 func main() {

@@ -1,12 +1,12 @@
 package service
 
 import (
-	"github.com/daveearley/ticketbooth/app/repository"
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/pkg/errors"
 	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/daveearley/ticketbooth/app/utils"
-	"net/http"
+	"strconv"
 )
 
 type transactionSrv struct {
@@ -28,7 +28,7 @@ func (s *transactionSrv) CreateTransaction(req *request.CreateTransaction, event
 	tickets, err := s.ValidateTicketRequest(req)
 
 	if err != nil {
-		return nil, nil, Error{http.StatusBadRequest, err}
+		return nil, nil, err
 	}
 
 	ticQtyMap := make(TicketQuantityMap)
@@ -36,7 +36,7 @@ func (s *transactionSrv) CreateTransaction(req *request.CreateTransaction, event
 		ticQtyMap[v.ID] = v.Quantity
 	}
 
-	trans, err := s.transRepo.Create(&models.Transaction{
+	trans, err := s.transRepo.Store(&models.Transaction{
 		EventID: event.ID,
 		// SqlBoiler panics if these defaults are not set.
 		// Likely a bug in the library related to decimal types.
@@ -71,7 +71,7 @@ func (s *transactionSrv) GetLineItems() {
 
 func (s *transactionSrv) ValidateTicketRequest(req *request.CreateTransaction) ([]*models.Ticket, error) {
 	var tickets []*models.Ticket
-	for _, v := range req.Tickets {
+	for i, v := range req.Tickets {
 		tic, err := s.ticketSrv.Find(v.ID)
 
 		if err != nil {
@@ -85,11 +85,11 @@ func (s *transactionSrv) ValidateTicketRequest(req *request.CreateTransaction) (
 		}
 
 		if !tic.MaxPerTransaction.IsZero() && v.Quantity > tic.MaxPerTransaction.Int {
-			return nil, Error{http.StatusUnprocessableEntity, errors.New("Too many selected")}
+			return nil, app.InvalidValueError("tickets."+strconv.Itoa(i)+".quantity", "quantity is greater than allowed")
 		}
 
 		if v.Quantity > remaining {
-			return nil, errors.New("Unavailable quantity")
+			return nil, app.InvalidValueError("tickets."+strconv.Itoa(i)+".quantity", "quantity is greater than remaining")
 		}
 
 		tickets = append(tickets, tic)

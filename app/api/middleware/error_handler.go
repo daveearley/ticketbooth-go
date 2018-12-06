@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/gin"
 	"fmt"
+	"github.com/gin-gonic/gin"
 
-	"gopkg.in/go-playground/validator.v9"
 	"errors"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 type ValidationError struct {
@@ -26,12 +26,12 @@ func ErrorHandler() gin.HandlerFunc {
 
 			//for _, e := range c.Errors {
 
-				//errs := e.Err.(validator.ValidationErrors)
-				//for _, err := range errs {
-				//	list[err.Field()] = ValidationErrorToText(err)
-				//}
+			//errs := e.Err.(validator.ValidationErrors)
+			//for _, err := range errs {
+			//	list[err.Field()] = ValidationErrorToText(err)
+			//}
 
-				// Make sure we maintain the preset response status
+			// Make sure we maintain the preset response status
 			//	status := http.StatusBadRequest
 			//	if c.Writer.Status() != http.StatusOK {
 			//		status = c.Writer.Status()

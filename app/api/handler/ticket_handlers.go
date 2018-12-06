@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/pagination"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/api/response"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type ticketHandlers struct {
@@ -20,18 +20,18 @@ func NewTicketHandlers(ticketSrv service.TicketService, eventSrv service.EventSe
 }
 
 func (ec *ticketHandlers) GetByID(c *gin.Context) {
-	ticket, _ := c.Get("ticket")
+	ticket, _ := c.Get(app.TicketResource)
 
 	response.JSON(c, ticket)
 }
 
 func (ec *ticketHandlers) DeleteByID(c *gin.Context) {
-	ticket, _ := c.Get("ticket")
+	ticket, _ := c.Get(app.TicketResource)
 
 	err := ec.srv.Delete(ticket.(*models.Ticket).ID)
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 
@@ -41,17 +41,17 @@ func (ec *ticketHandlers) DeleteByID(c *gin.Context) {
 func (ec *ticketHandlers) CreateTicket(c *gin.Context) {
 	createRequest := request.CreateTicket{}
 
-	e, _ := c.Get("event")
+	e, _ := c.Get(app.EventResource)
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.Error(c, err)
 		return
 	}
 
 	ticket, err := ec.srv.Create(createRequest, e.(*models.Event))
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 
@@ -62,15 +62,15 @@ func (ec *ticketHandlers) GetAll(c *gin.Context) {
 	paginationParams := pagination.NewParams()
 
 	if err := c.ShouldBindQuery(paginationParams); err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.Error(c, err)
 		return
 	}
 
-	event, _ := c.Get("event")
+	event, _ := c.Get(app.EventResource)
 	tix, err := ec.srv.List(paginationParams, event.(*models.Event))
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 
@@ -80,17 +80,17 @@ func (ec *ticketHandlers) GetAll(c *gin.Context) {
 func (ec *ticketHandlers) AddQuestion(c *gin.Context) {
 	createRequest := request.CreateQuestion{}
 
-	ticket, _ := c.Get("ticket")
+	ticket, _ := c.Get(app.TicketResource)
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.Error(c, err)
 		return
 	}
 
 	_, err := ec.srv.CreateQuestion(createRequest, ticket.(*models.Ticket))
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 

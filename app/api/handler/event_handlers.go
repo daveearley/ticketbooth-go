@@ -8,7 +8,6 @@ import (
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type eventHandlers struct {
@@ -21,7 +20,7 @@ func NewEventHandlers(srv service.EventService, ticSrv service.TicketService) *e
 }
 
 func (ec *eventHandlers) GetById(c *gin.Context) {
-	event, exists := c.Get("event")
+	event, exists := c.Get(app.EventResource)
 
 	if !exists {
 		response.NotFoundResponse(c)
@@ -32,11 +31,11 @@ func (ec *eventHandlers) GetById(c *gin.Context) {
 }
 
 func (ec *eventHandlers) PublicGetByID(c *gin.Context) {
-	event, _ := c.Get("event")
+	event, _ := c.Get(app.EventResource)
 	tickets, err := ec.ticSrv.FindByEventID(event.(*models.Event).ID)
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 	}
 
 	// todo - move to transformation layer
@@ -59,7 +58,7 @@ func (ec *eventHandlers) PublicGetByID(c *gin.Context) {
 }
 
 func (ec *eventHandlers) DeleteEvent(c *gin.Context) {
-	event, exists := c.Get("event")
+	event, exists := c.Get(app.EventResource)
 
 	if !exists {
 		response.NotFoundResponse(c)
@@ -67,7 +66,7 @@ func (ec *eventHandlers) DeleteEvent(c *gin.Context) {
 	}
 
 	if err := ec.srv.Delete(event.(*models.Event).ID); err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 
@@ -78,14 +77,14 @@ func (ec *eventHandlers) CreateEvent(c *gin.Context) {
 	createRequest := request.CreateEvent{}
 
 	if err := c.ShouldBindJSON(&createRequest); err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.Error(c, err)
 		return
 	}
 
 	event, err := ec.srv.Create(createRequest, app.GetUserFromContext(c))
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 
@@ -96,14 +95,14 @@ func (ec *eventHandlers) GetAll(c *gin.Context) {
 	paginationParams := pagination.NewParams()
 
 	if err := c.ShouldBindQuery(paginationParams); err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.Error(c, err)
 		return
 	}
 
 	events, err := ec.srv.List(paginationParams, app.GetUserFromContext(c))
 
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err)
+		response.Error(c, err)
 		return
 	}
 

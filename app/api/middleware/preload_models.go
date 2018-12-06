@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"fmt"
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/response"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 // PreloadModels binds parameter IDs to their models and sets them in context
@@ -24,17 +24,20 @@ func PreloadModels(
 			switch v.Key {
 			case "transaction_uuid":
 				// todo - limit this to only recent/unfinalized transactions
-				transaction, err := tranRepo.FindByUUID(v.Value)
+				transaction, err := tranRepo.GetByUUID(v.Value)
 
 				if err != nil {
 					response.NotFoundResponse(c)
 					return
 				}
 
-				c.Set("transaction", transaction)
+				c.Set(app.TransactionResource, transaction)
 			case "ticket_id":
 				ticket, err := ticketRepo.GetByID(id)
+
 				if err != nil {
+					e := errors.WithStack(err)
+					fmt.Println(e)
 					response.NotFoundResponse(c)
 					return
 				}
@@ -46,12 +49,12 @@ func PreloadModels(
 					return
 				}
 
-				c.Set("ticket", ticket)
-				c.Set("event", event)
+				c.Set(app.TicketResource, ticket)
+				c.Set(app.EventResource, event)
 				break
 			case "event_id":
 
-				if _, exists := c.Get("event"); exists {
+				if _, exists := c.Get(app.EventResource); exists {
 					continue
 				}
 
@@ -61,7 +64,7 @@ func PreloadModels(
 					response.NotFoundResponse(c)
 					return
 				}
-				c.Set("event", event)
+				c.Set(app.EventResource, event)
 				break
 			case "account_id":
 				account, err := accountRepo.GetByID(id)
@@ -70,10 +73,10 @@ func PreloadModels(
 					response.NotFoundResponse(c)
 					return
 				}
-				c.Set("account", account)
+				c.Set(app.AccountResource, account)
 				break
 			default:
-				response.Error(c, http.StatusBadRequest, errors.New("Unknown parameter in URL"))
+				response.Error(c, app.InvalidValueError(v.Key, "Unknown parameter"))
 			}
 		}
 

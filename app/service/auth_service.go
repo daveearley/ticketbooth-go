@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/api/request"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/daveearley/ticketbooth/app/utils"
@@ -32,7 +32,7 @@ func (s *userService) ValidateLoginAndReturnJwtToken(req *request.Login) (string
 	}
 
 	if utils.CheckPasswordHash(req.Password, u.Password) == false {
-		return "", errors.New("incorrect password")
+		return "", app.UnauthorizedError("JWT Login")
 	}
 
 	mySigningKey := []byte(s.config.JwtSecret)

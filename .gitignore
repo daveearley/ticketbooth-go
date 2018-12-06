@@ -3,3 +3,4 @@
 .env
 .idea
 /docker/postgres-data
+/bin

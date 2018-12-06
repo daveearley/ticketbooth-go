@@ -10,4 +10,3 @@ func getID(p *gin.Param) int {
 
 	return id
 }
-

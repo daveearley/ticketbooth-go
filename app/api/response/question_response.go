@@ -1,9 +1,9 @@
 package response
 
 import (
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
-	"github.com/daveearley/ticketbooth/app"
 )
 
 type QuestionResponse struct {

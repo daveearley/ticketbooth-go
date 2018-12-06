@@ -22,19 +22,21 @@ type PublicTicketResponse struct {
 	Questions         interface{} `json:"questions"`
 }
 
+//TransformTicket transforms a ticket model for frontend use
 func TransformTicket(c *gin.Context, t *models.Ticket) interface{} {
 	if app.IsUserAuthenticated(c) {
-		return &TicketResponse{t, TransformQuestions(c, t.R.Questions)}
+		return &TicketResponse{t, getTicketQuestions(t)}
 	}
 
 	return &PublicTicketResponse{
 		ID:                t.ID,
 		Title:             t.Title,
 		QuantityAvailable: t.InititalQuantityAvailable,
-		Questions:         TransformQuestions(c, t.R.Questions),
+		Questions:         getTicketQuestions(t),
 	}
 }
 
+//TransformTickets transforms a slice of tickets
 func TransformTickets(c *gin.Context, tickets []*models.Ticket) interface{} {
 	var transformed []interface{}
 	for _, v := range tickets {
@@ -42,4 +44,13 @@ func TransformTickets(c *gin.Context, tickets []*models.Ticket) interface{} {
 	}
 
 	return &transformed
+}
+
+//getTicketQuestions returns a tickets questions or nil
+func getTicketQuestions(ticket *models.Ticket) models.QuestionSlice {
+	if ticket.R != nil {
+		return ticket.R.Questions
+	}
+
+	return nil
 }
