@@ -18,21 +18,23 @@ import (
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/strmangle"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 // Ticket is an object representing the database table.
 type Ticket struct {
-	ID                        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Title                     string    `boil:"title" json:"title" toml:"title" yaml:"title"`
-	EventID                   int       `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
-	InititalQuantityAvailable int       `boil:"initital_quantity_available" json:"initital_quantity_available" toml:"initital_quantity_available" yaml:"initital_quantity_available"`
-	QuantitySold              int       `boil:"quantity_sold" json:"quantity_sold" toml:"quantity_sold" yaml:"quantity_sold"`
-	CreatedAt                 time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt                 time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt                 time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
-	SaleStartDate             null.Time `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
-	SaleEndDate               null.Time `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
-	MaxPerTransaction         null.Int  `boil:"max_per_transaction" json:"max_per_transaction,omitempty" toml:"max_per_transaction" yaml:"max_per_transaction,omitempty"`
+	ID                        int           `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Title                     string        `boil:"title" json:"title" toml:"title" yaml:"title"`
+	EventID                   int           `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
+	InititalQuantityAvailable int           `boil:"initital_quantity_available" json:"initital_quantity_available" toml:"initital_quantity_available" yaml:"initital_quantity_available"`
+	QuantitySold              int           `boil:"quantity_sold" json:"quantity_sold" toml:"quantity_sold" yaml:"quantity_sold"`
+	CreatedAt                 time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt                 time.Time     `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt                 time.Time     `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	SaleStartDate             null.Time     `boil:"sale_start_date" json:"sale_start_date,omitempty" toml:"sale_start_date" yaml:"sale_start_date,omitempty"`
+	SaleEndDate               null.Time     `boil:"sale_end_date" json:"sale_end_date,omitempty" toml:"sale_end_date" yaml:"sale_end_date,omitempty"`
+	MaxPerTransaction         null.Int      `boil:"max_per_transaction" json:"max_per_transaction,omitempty" toml:"max_per_transaction" yaml:"max_per_transaction,omitempty"`
+	Price                     types.Decimal `boil:"price" json:"price" toml:"price" yaml:"price"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +52,7 @@ var TicketColumns = struct {
 	SaleStartDate             string
 	SaleEndDate               string
 	MaxPerTransaction         string
+	Price                     string
 }{
 	ID:                        "id",
 	Title:                     "title",
@@ -62,6 +65,7 @@ var TicketColumns = struct {
 	SaleStartDate:             "sale_start_date",
 	SaleEndDate:               "sale_end_date",
 	MaxPerTransaction:         "max_per_transaction",
+	Price:                     "price",
 }
 
 // TicketRels is where relationship names are stored.
@@ -100,9 +104,9 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketColumns               = []string{"id", "title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date", "max_per_transaction"}
+	ticketColumns               = []string{"id", "title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date", "max_per_transaction", "price"}
 	ticketColumnsWithoutDefault = []string{"title", "event_id", "initital_quantity_available", "quantity_sold", "created_at", "updated_at", "deleted_at", "sale_start_date", "sale_end_date", "max_per_transaction"}
-	ticketColumnsWithDefault    = []string{"id"}
+	ticketColumnsWithDefault    = []string{"id", "price"}
 	ticketPrimaryKeyColumns     = []string{"id"}
 )
 

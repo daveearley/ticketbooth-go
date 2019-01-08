@@ -19,7 +19,7 @@ func AuthorizeActions() gin.HandlerFunc {
 				ticket, _ := c.Get(app.TicketResource)
 
 				if ticket.(*models.Ticket).EventID != event.(*models.Event).ID {
-					response.Unauthorized(c)
+					response.Error(c, app.UnauthorizedError("action on ticket is unauthorized"))
 					return
 				}
 				break
@@ -27,7 +27,7 @@ func AuthorizeActions() gin.HandlerFunc {
 				event, _ := c.Get(app.EventResource)
 
 				if event.(*models.Event).AccountID != app.GetUserFromContext(c).AccountID {
-					response.Unauthorized(c)
+					response.Error(c, app.UnauthorizedError("action on event is unauthorized"))
 					return
 				}
 				break
@@ -35,7 +35,7 @@ func AuthorizeActions() gin.HandlerFunc {
 				account, _ := c.Get(app.AccountResource)
 
 				if account.(*models.Account).ID != app.GetUserFromContext(c).AccountID {
-					response.Unauthorized(c)
+					response.Error(c, app.UnauthorizedError("action on account is unauthorized"))
 					return
 				}
 				break

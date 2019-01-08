@@ -59,20 +59,20 @@ var AttendeeColumns = struct {
 
 // AttendeeRels is where relationship names are stored.
 var AttendeeRels = struct {
+	Transaction string
 	Ticket      string
 	Event       string
-	Transaction string
 }{
+	Transaction: "Transaction",
 	Ticket:      "Ticket",
 	Event:       "Event",
-	Transaction: "Transaction",
 }
 
 // attendeeR is where relationships are stored.
 type attendeeR struct {
+	Transaction *Transaction
 	Ticket      *Ticket
 	Event       *Event
-	Transaction *Transaction
 }
 
 // NewStruct creates a new relationship struct
@@ -325,6 +325,20 @@ func (q attendeeQuery) Exists(exec boil.Executor) (bool, error) {
 	return count > 0, nil
 }
 
+// Transaction pointed to by the foreign key.
+func (o *Attendee) Transaction(mods ...qm.QueryMod) transactionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("id=?", o.TransactionID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Transactions(queryMods...)
+	queries.SetFrom(query.Query, "\"transactions\"")
+
+	return query
+}
+
 // Ticket pointed to by the foreign key.
 func (o *Attendee) Ticket(mods ...qm.QueryMod) ticketQuery {
 	queryMods := []qm.QueryMod{
@@ -353,18 +367,99 @@ func (o *Attendee) Event(mods ...qm.QueryMod) eventQuery {
 	return query
 }
 
-// Transaction pointed to by the foreign key.
-func (o *Attendee) Transaction(mods ...qm.QueryMod) transactionQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("id=?", o.TransactionID),
+// LoadTransaction allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (attendeeL) LoadTransaction(e boil.Executor, singular bool, maybeAttendee interface{}, mods queries.Applicator) error {
+	var slice []*Attendee
+	var object *Attendee
+
+	if singular {
+		object = maybeAttendee.(*Attendee)
+	} else {
+		slice = *maybeAttendee.(*[]*Attendee)
 	}
 
-	queryMods = append(queryMods, mods...)
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &attendeeR{}
+		}
+		args = append(args, object.TransactionID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &attendeeR{}
+			}
 
-	query := Transactions(queryMods...)
-	queries.SetFrom(query.Query, "\"transactions\"")
+			for _, a := range args {
+				if a == obj.TransactionID {
+					continue Outer
+				}
+			}
 
-	return query
+			args = append(args, obj.TransactionID)
+		}
+	}
+
+	query := NewQuery(qm.From(`transactions`), qm.WhereIn(`id in ?`, args...))
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.Query(e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Transaction")
+	}
+
+	var resultSlice []*Transaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for transactions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transactions")
+	}
+
+	if len(attendeeAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Transaction = foreign
+		if foreign.R == nil {
+			foreign.R = &transactionR{}
+		}
+		foreign.R.Attendees = append(foreign.R.Attendees, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.TransactionID == foreign.ID {
+				local.R.Transaction = foreign
+				if foreign.R == nil {
+					foreign.R = &transactionR{}
+				}
+				foreign.R.Attendees = append(foreign.R.Attendees, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadTicket allows an eager lookup of values, cached into the
@@ -557,96 +652,48 @@ func (attendeeL) LoadEvent(e boil.Executor, singular bool, maybeAttendee interfa
 	return nil
 }
 
-// LoadTransaction allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (attendeeL) LoadTransaction(e boil.Executor, singular bool, maybeAttendee interface{}, mods queries.Applicator) error {
-	var slice []*Attendee
-	var object *Attendee
+// SetTransaction of the attendee to the related item.
+// Sets o.R.Transaction to related.
+// Adds o to related.R.Attendees.
+func (o *Attendee) SetTransaction(exec boil.Executor, insert bool, related *Transaction) error {
+	var err error
+	if insert {
+		if err = related.Insert(exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
 
-	if singular {
-		object = maybeAttendee.(*Attendee)
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"attendees\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"transaction_id"}),
+		strmangle.WhereClause("\"", "\"", 2, attendeePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.DebugMode {
+		fmt.Fprintln(boil.DebugWriter, updateQuery)
+		fmt.Fprintln(boil.DebugWriter, values)
+	}
+
+	if _, err = exec.Exec(updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.TransactionID = related.ID
+	if o.R == nil {
+		o.R = &attendeeR{
+			Transaction: related,
+		}
 	} else {
-		slice = *maybeAttendee.(*[]*Attendee)
+		o.R.Transaction = related
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &attendeeR{}
+	if related.R == nil {
+		related.R = &transactionR{
+			Attendees: AttendeeSlice{o},
 		}
-		args = append(args, object.TransactionID)
 	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &attendeeR{}
-			}
-
-			for _, a := range args {
-				if a == obj.TransactionID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.TransactionID)
-		}
-	}
-
-	query := NewQuery(qm.From(`transactions`), qm.WhereIn(`id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.Query(e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Transaction")
-	}
-
-	var resultSlice []*Transaction
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Transaction")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for transactions")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for transactions")
-	}
-
-	if len(attendeeAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Transaction = foreign
-		if foreign.R == nil {
-			foreign.R = &transactionR{}
-		}
-		foreign.R.Attendees = append(foreign.R.Attendees, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.TransactionID == foreign.ID {
-				local.R.Transaction = foreign
-				if foreign.R == nil {
-					foreign.R = &transactionR{}
-				}
-				foreign.R.Attendees = append(foreign.R.Attendees, local)
-				break
-			}
-		}
+		related.R.Attendees = append(related.R.Attendees, o)
 	}
 
 	return nil
@@ -737,53 +784,6 @@ func (o *Attendee) SetEvent(exec boil.Executor, insert bool, related *Event) err
 
 	if related.R == nil {
 		related.R = &eventR{
-			Attendees: AttendeeSlice{o},
-		}
-	} else {
-		related.R.Attendees = append(related.R.Attendees, o)
-	}
-
-	return nil
-}
-
-// SetTransaction of the attendee to the related item.
-// Sets o.R.Transaction to related.
-// Adds o to related.R.Attendees.
-func (o *Attendee) SetTransaction(exec boil.Executor, insert bool, related *Transaction) error {
-	var err error
-	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"attendees\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"transaction_id"}),
-		strmangle.WhereClause("\"", "\"", 2, attendeePrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, updateQuery)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.TransactionID = related.ID
-	if o.R == nil {
-		o.R = &attendeeR{
-			Transaction: related,
-		}
-	} else {
-		o.R.Transaction = related
-	}
-
-	if related.R == nil {
-		related.R = &transactionR{
 			Attendees: AttendeeSlice{o},
 		}
 	} else {

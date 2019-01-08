@@ -48,10 +48,10 @@ func (s *eventService) Create(req request.CreateEvent, user *models.User) (*mode
 	}
 
 	if req.Attributes != nil {
-		s.er.SetAttributes(event, MapToAttributes(&req.Attributes))
+		err = s.er.SetAttributes(event, MapToAttributes(&req.Attributes))
 	}
 
-	return event, nil
+	return event, err
 }
 
 func (s *eventService) List(p *pagination.Params, authUser *models.User) ([]*models.Event, error) {

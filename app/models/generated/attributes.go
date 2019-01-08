@@ -553,7 +553,7 @@ func (attributeL) LoadTickets(e boil.Executor, singular bool, maybeAttribute int
 		one := new(Ticket)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.Title, &one.EventID, &one.InititalQuantityAvailable, &one.QuantitySold, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.SaleStartDate, &one.SaleEndDate, &one.MaxPerTransaction, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Title, &one.EventID, &one.InititalQuantityAvailable, &one.QuantitySold, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.SaleStartDate, &one.SaleEndDate, &one.MaxPerTransaction, &one.Price, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for tickets")
 		}
@@ -664,7 +664,7 @@ func (attributeL) LoadTransactions(e boil.Executor, singular bool, maybeAttribut
 		one := new(Transaction)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.EventID, &one.Total, &one.TotalTax, &one.TotalDiscount, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.UUID, &one.Metadata, &one.FirstName, &one.LastName, &one.Email, &one.CompanyName, &localJoinCol)
+		err = results.Scan(&one.ID, &one.EventID, &one.Total, &one.TotalTax, &one.TotalDiscount, &one.CreatedAt, &one.UpdatedAt, &one.DeletedAt, &one.UUID, &one.Metadata, &one.FirstName, &one.LastName, &one.Email, &one.CompanyName, &one.Status, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for transactions")
 		}

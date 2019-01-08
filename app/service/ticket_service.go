@@ -22,7 +22,7 @@ type TicketService interface {
 	List(p *pagination.Params, event *models.Event) ([]*models.Ticket, error)
 	GetRemainingTicketQuantity(ticket *models.Ticket) (int, error)
 	FindByEventID(ticketID int) ([]*models.Ticket, error)
-	ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) error
+	ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) (time.Time, error)
 }
 
 type ticketService struct {
@@ -42,18 +42,20 @@ func (s *ticketService) Find(id int) (*models.Ticket, error) {
 	return s.er.GetByID(id)
 }
 
-func (s *ticketService) ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) error {
+func (s *ticketService) ReserveTickets(ticketQuantityMap TicketQuantityMap, trans *models.Transaction) (time.Time, error) {
 	var reserved []*models.TicketReservation
+	expiry := time.Now().Add(defaultTransactionTimeout)
+
 	for ticID, qty := range ticketQuantityMap {
 		reserved = append(reserved, &models.TicketReservation{
 			TicketID:       ticID,
 			TicketQuantity: qty,
 			TransactionID:  trans.ID,
-			ReservedUntil:  time.Now().Add(defaultTransactionTimeout),
+			ReservedUntil:  expiry,
 		})
 	}
 
-	return s.er.CreateReservedTickets(reserved)
+	return expiry, s.er.CreateReservedTickets(reserved)
 }
 
 func (s *ticketService) GetRemainingTicketQuantity(ticket *models.Ticket) (int, error) {

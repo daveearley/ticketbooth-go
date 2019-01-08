@@ -37,6 +37,7 @@ type Transaction struct {
 	LastName      null.String   `boil:"last_name" json:"last_name,omitempty" toml:"last_name" yaml:"last_name,omitempty"`
 	Email         null.String   `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
 	CompanyName   null.String   `boil:"company_name" json:"company_name,omitempty" toml:"company_name" yaml:"company_name,omitempty"`
+	Status        string        `boil:"status" json:"status" toml:"status" yaml:"status"`
 
 	R *transactionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L transactionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -57,6 +58,7 @@ var TransactionColumns = struct {
 	LastName      string
 	Email         string
 	CompanyName   string
+	Status        string
 }{
 	ID:            "id",
 	EventID:       "event_id",
@@ -72,6 +74,7 @@ var TransactionColumns = struct {
 	LastName:      "last_name",
 	Email:         "email",
 	CompanyName:   "company_name",
+	Status:        "status",
 }
 
 // TransactionRels is where relationship names are stored.
@@ -113,9 +116,9 @@ func (*transactionR) NewStruct() *transactionR {
 type transactionL struct{}
 
 var (
-	transactionColumns               = []string{"id", "event_id", "total", "total_tax", "total_discount", "created_at", "updated_at", "deleted_at", "uuid", "metadata", "first_name", "last_name", "email", "company_name"}
+	transactionColumns               = []string{"id", "event_id", "total", "total_tax", "total_discount", "created_at", "updated_at", "deleted_at", "uuid", "metadata", "first_name", "last_name", "email", "company_name", "status"}
 	transactionColumnsWithoutDefault = []string{"event_id", "created_at", "updated_at", "deleted_at", "metadata", "first_name", "last_name", "email", "company_name"}
-	transactionColumnsWithDefault    = []string{"id", "total", "total_tax", "total_discount", "uuid"}
+	transactionColumnsWithDefault    = []string{"id", "total", "total_tax", "total_discount", "uuid", "status"}
 	transactionPrimaryKeyColumns     = []string{"id"}
 )
 

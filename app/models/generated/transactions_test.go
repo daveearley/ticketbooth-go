@@ -1729,7 +1729,7 @@ func testTransactionsSelect(t *testing.T) {
 }
 
 var (
-	transactionDBTypes = map[string]string{`CompanyName`: `character varying`, `CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `Email`: `character varying`, `EventID`: `integer`, `FirstName`: `character varying`, `ID`: `integer`, `LastName`: `character varying`, `Metadata`: `jsonb`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UUID`: `uuid`, `UpdatedAt`: `timestamp without time zone`}
+	transactionDBTypes = map[string]string{`CompanyName`: `character varying`, `CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `Email`: `character varying`, `EventID`: `integer`, `FirstName`: `character varying`, `ID`: `integer`, `LastName`: `character varying`, `Metadata`: `jsonb`, `Status`: `enum.transaction_status('PENDING','COMPLETE','INVALID','CANCELLED','REFUNDED','PARTIALLY_REFUNDED')`, `Total`: `numeric`, `TotalDiscount`: `numeric`, `TotalTax`: `numeric`, `UUID`: `uuid`, `UpdatedAt`: `timestamp without time zone`}
 	_                  = bytes.MinRead
 )
 

@@ -6,7 +6,6 @@ import (
 	"github.com/daveearley/ticketbooth/app/api/response"
 	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 // PreloadModels binds parameter IDs to their models and sets them in context
@@ -23,7 +22,7 @@ func PreloadModels(
 			fmt.Println(v.Key)
 			switch v.Key {
 			case "transaction_uuid":
-				// todo - limit this to only recent/unfinalized transactions
+				// todo - limit this to only recent/un-finalized transactions
 				transaction, err := tranRepo.GetByUUID(v.Value)
 
 				if err != nil {
@@ -36,9 +35,7 @@ func PreloadModels(
 				ticket, err := ticketRepo.GetByID(id)
 
 				if err != nil {
-					e := errors.WithStack(err)
-					fmt.Println(e)
-					response.NotFoundResponse(c)
+					response.Error(c, err)
 					return
 				}
 
@@ -61,7 +58,7 @@ func PreloadModels(
 				event, err := eventRepo.GetByID(id)
 
 				if err != nil {
-					response.NotFoundResponse(c)
+					response.Error(c, err)
 					return
 				}
 				c.Set(app.EventResource, event)
@@ -70,7 +67,7 @@ func PreloadModels(
 				account, err := accountRepo.GetByID(id)
 
 				if err != nil {
-					response.NotFoundResponse(c)
+					response.Error(c, err)
 					return
 				}
 				c.Set(app.AccountResource, account)

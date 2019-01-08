@@ -259,9 +259,9 @@ func TestInsert(t *testing.T) {
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
 	t.Run("AccountUserToAccountUsingAccount", testAccountUserToOneAccountUsingAccount)
+	t.Run("AttendeeToTransactionUsingTransaction", testAttendeeToOneTransactionUsingTransaction)
 	t.Run("AttendeeToTicketUsingTicket", testAttendeeToOneTicketUsingTicket)
 	t.Run("AttendeeToEventUsingEvent", testAttendeeToOneEventUsingEvent)
-	t.Run("AttendeeToTransactionUsingTransaction", testAttendeeToOneTransactionUsingTransaction)
 	t.Run("CustomerToTransactionUsingTransaction", testCustomerToOneTransactionUsingTransaction)
 	t.Run("CustomerToEventUsingEvent", testCustomerToOneEventUsingEvent)
 	t.Run("EventToAccountUsingAccount", testEventToOneAccountUsingAccount)
@@ -321,9 +321,9 @@ func TestToMany(t *testing.T) {
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
 	t.Run("AccountUserToAccountUsingAccountUsers", testAccountUserToOneSetOpAccountUsingAccount)
+	t.Run("AttendeeToTransactionUsingAttendees", testAttendeeToOneSetOpTransactionUsingTransaction)
 	t.Run("AttendeeToTicketUsingAttendees", testAttendeeToOneSetOpTicketUsingTicket)
 	t.Run("AttendeeToEventUsingAttendees", testAttendeeToOneSetOpEventUsingEvent)
-	t.Run("AttendeeToTransactionUsingAttendees", testAttendeeToOneSetOpTransactionUsingTransaction)
 	t.Run("CustomerToTransactionUsingCustomers", testCustomerToOneSetOpTransactionUsingTransaction)
 	t.Run("CustomerToEventUsingCustomers", testCustomerToOneSetOpEventUsingEvent)
 	t.Run("EventToAccountUsingEvents", testEventToOneSetOpAccountUsingAccount)

@@ -72,7 +72,7 @@ func (p *pgTester) setup() error {
 		return err
 	}
 
-	// Store a randomized db name.
+	// Create a randomized db name.
 	p.testDBName = randomize.StableDBName(p.dbName)
 
 	if err = p.makePGPassFile(); err != nil {

@@ -83,3 +83,13 @@ const (
 	QuestionTypesTEXT     = "TEXT"
 	QuestionTypesWAIVER   = "WAIVER"
 )
+
+// Enum values for transaction_status
+const (
+	TransactionStatusPENDING            = "PENDING"
+	TransactionStatusCOMPLETE           = "COMPLETE"
+	TransactionStatusINVALID            = "INVALID"
+	TransactionStatusCANCELLED          = "CANCELLED"
+	TransactionStatusREFUNDED           = "REFUNDED"
+	TransactionStatusPARTIALLY_REFUNDED = "PARTIALLY_REFUNDED"
+)

@@ -481,6 +481,57 @@ func testAttendeesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testAttendeeToOneTransactionUsingTransaction(t *testing.T) {
+
+	tx := MustTx(boil.Begin())
+	defer func() { _ = tx.Rollback() }()
+
+	var local Attendee
+	var foreign Transaction
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, attendeeDBTypes, false, attendeeColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Attendee struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	}
+
+	if err := foreign.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.TransactionID = foreign.ID
+	if err := local.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Transaction().One(tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := AttendeeSlice{&local}
+	if err = local.L.LoadTransaction(tx, false, (*[]*Attendee)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Transaction == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Transaction = nil
+	if err = local.L.LoadTransaction(tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Transaction == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testAttendeeToOneTicketUsingTicket(t *testing.T) {
 
 	tx := MustTx(boil.Begin())
@@ -583,57 +634,62 @@ func testAttendeeToOneEventUsingEvent(t *testing.T) {
 	}
 }
 
-func testAttendeeToOneTransactionUsingTransaction(t *testing.T) {
+func testAttendeeToOneSetOpTransactionUsingTransaction(t *testing.T) {
+	var err error
 
 	tx := MustTx(boil.Begin())
 	defer func() { _ = tx.Rollback() }()
 
-	var local Attendee
-	var foreign Transaction
+	var a Attendee
+	var b, c Transaction
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, attendeeDBTypes, false, attendeeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Attendee struct: %s", err)
+	if err = randomize.Struct(seed, &a, attendeeDBTypes, false, strmangle.SetComplement(attendeePrimaryKeyColumns, attendeeColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
-	if err := randomize.Struct(seed, &foreign, transactionDBTypes, false, transactionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Transaction struct: %s", err)
+	if err = randomize.Struct(seed, &b, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
 	}
-
-	if err := foreign.Insert(tx, boil.Infer()); err != nil {
+	if err = randomize.Struct(seed, &c, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
-	local.TransactionID = foreign.ID
-	if err := local.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Transaction().One(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for i, x := range []*Transaction{&b, &c} {
+		err = a.SetTransaction(tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
+		if a.R.Transaction != x {
+			t.Error("relationship struct not set to correct value")
+		}
 
-	slice := AttendeeSlice{&local}
-	if err = local.L.LoadTransaction(tx, false, (*[]*Attendee)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Transaction == nil {
-		t.Error("struct should have been eager loaded")
-	}
+		if x.R.Attendees[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.TransactionID != x.ID {
+			t.Error("foreign key was wrong value", a.TransactionID)
+		}
 
-	local.R.Transaction = nil
-	if err = local.L.LoadTransaction(tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Transaction == nil {
-		t.Error("struct should have been eager loaded")
+		zero := reflect.Zero(reflect.TypeOf(a.TransactionID))
+		reflect.Indirect(reflect.ValueOf(&a.TransactionID)).Set(zero)
+
+		if err = a.Reload(tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.TransactionID != x.ID {
+			t.Error("foreign key was wrong value", a.TransactionID, x.ID)
+		}
 	}
 }
-
 func testAttendeeToOneSetOpTicketUsingTicket(t *testing.T) {
 	var err error
 
@@ -743,62 +799,6 @@ func testAttendeeToOneSetOpEventUsingEvent(t *testing.T) {
 
 		if a.EventID != x.ID {
 			t.Error("foreign key was wrong value", a.EventID, x.ID)
-		}
-	}
-}
-func testAttendeeToOneSetOpTransactionUsingTransaction(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Attendee
-	var b, c Transaction
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, attendeeDBTypes, false, strmangle.SetComplement(attendeePrimaryKeyColumns, attendeeColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, transactionDBTypes, false, strmangle.SetComplement(transactionPrimaryKeyColumns, transactionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Transaction{&b, &c} {
-		err = a.SetTransaction(tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Transaction != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Attendees[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.TransactionID != x.ID {
-			t.Error("foreign key was wrong value", a.TransactionID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.TransactionID))
-		reflect.Indirect(reflect.ValueOf(&a.TransactionID)).Set(zero)
-
-		if err = a.Reload(tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.TransactionID != x.ID {
-			t.Error("foreign key was wrong value", a.TransactionID, x.ID)
 		}
 	}
 }

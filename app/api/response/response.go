@@ -37,13 +37,6 @@ func Error(c *gin.Context, err error) {
 	})
 }
 
-func Unauthorized(c *gin.Context) {
-	c.Error(errors.New(unauthorizedMessage))
-	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-		"error": unauthorizedMessage,
-	})
-}
-
 func NotFoundResponse(c *gin.Context) {
 	c.AbortWithStatus(http.StatusNotFound)
 }

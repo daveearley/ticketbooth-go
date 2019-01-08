@@ -1734,7 +1734,7 @@ func testTicketsSelect(t *testing.T) {
 }
 
 var (
-	ticketDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `InititalQuantityAvailable`: `integer`, `MaxPerTransaction`: `integer`, `QuantitySold`: `integer`, `SaleEndDate`: `timestamp without time zone`, `SaleStartDate`: `timestamp without time zone`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`}
+	ticketDBTypes = map[string]string{`CreatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`, `EventID`: `integer`, `ID`: `integer`, `InititalQuantityAvailable`: `integer`, `MaxPerTransaction`: `integer`, `Price`: `numeric`, `QuantitySold`: `integer`, `SaleEndDate`: `timestamp without time zone`, `SaleStartDate`: `timestamp without time zone`, `Title`: `character varying`, `UpdatedAt`: `timestamp without time zone`}
 	_             = bytes.MinRead
 )
 
