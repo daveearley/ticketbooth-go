@@ -1,7 +1,7 @@
 package response
 
 import (
-	"github.com/daveearley/ticketbooth/app/models/generated"
+	"../../../app/models/generated"
 	"github.com/gin-gonic/gin"
 )
 

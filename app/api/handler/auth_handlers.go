@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/service"
+	"../../../app/api/request"
+	"../../../app/api/response"
+	"../../../app/service"
 	"github.com/gin-gonic/gin"
 )
 

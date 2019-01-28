@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/daveearley/ticketbooth/app"
-	"github.com/daveearley/ticketbooth/app/api"
-	"github.com/daveearley/ticketbooth/configs"
-	"github.com/daveearley/ticketbooth/database"
+	"../../app"
+	"../../app/api"
+	"../../configs"
+	"../../database"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/volatiletech/sqlboiler/boil"

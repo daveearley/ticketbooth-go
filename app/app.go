@@ -3,7 +3,7 @@ package app
 import (
 	"crypto/sha1"
 	"fmt"
-	"github.com/daveearley/ticketbooth/app/models/generated"
+	"../app/models/generated"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +17,7 @@ const (
 	TicketResource      = "ticket"
 )
 
-// GetUserFromContext extracts the authenicated user from the gin context
+// GetUserFromContext extracts the authenticated user from the gin context
 func GetUserFromContext(c *gin.Context) *models.User {
 	user, exists := c.Get(UserResource)
 

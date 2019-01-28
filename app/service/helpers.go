@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/daveearley/ticketbooth/app/models/generated"
+	"../../app/models/generated"
 	"reflect"
 )
 

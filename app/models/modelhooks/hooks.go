@@ -1,8 +1,8 @@
 package modelhooks
 
 import (
-	"github.com/daveearley/ticketbooth/app/models/generated"
-	"github.com/daveearley/ticketbooth/app/utils"
+	"../../models/generated"
+	"../../utils"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

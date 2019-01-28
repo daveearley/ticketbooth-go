@@ -3,9 +3,9 @@ package response
 import (
 	"errors"
 	"fmt"
-	"github.com/daveearley/ticketbooth/app"
-	"github.com/daveearley/ticketbooth/app/api/pagination"
-	"github.com/daveearley/ticketbooth/app/models/generated"
+	"../../../app"
+	"../../../app/api/pagination"
+	"../../../app/models/generated"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

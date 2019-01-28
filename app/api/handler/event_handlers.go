@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"github.com/daveearley/ticketbooth/app"
-	"github.com/daveearley/ticketbooth/app/api/pagination"
-	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/models/generated"
-	"github.com/daveearley/ticketbooth/app/service"
+	"../../../app"
+	"../../../app/api/pagination"
+	"../../../app/api/request"
+	"../../../app/api/response"
+	"../../../app/models/generated"
+	"../../../app/service"
 	"github.com/gin-gonic/gin"
 )
 

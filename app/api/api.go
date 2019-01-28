@@ -2,12 +2,12 @@ package api
 
 import (
 	"database/sql"
-	"github.com/daveearley/ticketbooth/app/api/handler"
-	"github.com/daveearley/ticketbooth/app/api/middleware"
-	"github.com/daveearley/ticketbooth/app/api/response"
-	"github.com/daveearley/ticketbooth/app/repository"
-	"github.com/daveearley/ticketbooth/app/service"
-	"github.com/daveearley/ticketbooth/configs"
+	"../../../app/api/handler"
+	"../../../app/api/middleware"
+	"../../../app/api/response"
+	"../../../app/repository"
+	"../../../app/service"
+	"../../../configs"
 	"github.com/gin-gonic/gin"
 )
 

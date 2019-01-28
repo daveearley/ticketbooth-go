@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/daveearley/ticketbooth/app/api/request"
-	"github.com/daveearley/ticketbooth/app/models/generated"
-	"github.com/daveearley/ticketbooth/app/repository"
+	"../../app/api/request"
+	"../../app/models/generated"
+	"../../app/repository"
 )
 
 type AccountService interface {

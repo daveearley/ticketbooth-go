@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"github.com/daveearley/ticketbooth/app"
-	"github.com/daveearley/ticketbooth/app/repository"
-	"github.com/daveearley/ticketbooth/configs"
+	"../../../app"
+	"../../../app/repository"
+	"../../../configs"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"

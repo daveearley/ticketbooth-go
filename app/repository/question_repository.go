@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/daveearley/ticketbooth/app"
-	"github.com/daveearley/ticketbooth/app/models/generated"
+	"../../app"
+	"../../app/models/generated"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
