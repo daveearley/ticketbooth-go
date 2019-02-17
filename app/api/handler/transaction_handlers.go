@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"../../../app"
-	"../../../app/api/request"
-	"../../../app/api/response"
-	"../../../app/models/generated"
-	"../../../app/service"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/service"
 	"github.com/gin-gonic/gin"
 	"time"
 )

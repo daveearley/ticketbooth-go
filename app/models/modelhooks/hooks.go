@@ -1,8 +1,8 @@
 package modelhooks
 
 import (
-	"../../models/generated"
-	"../../utils"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/utils"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -14,6 +14,7 @@ func userInsertHook(executor boil.Executor, u *models.User) error {
 	return nil
 }
 
+//Register registers user hooks for database events
 func Register() {
 	models.AddUserHook(boil.BeforeInsertHook, userInsertHook)
 }

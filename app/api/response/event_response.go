@@ -1,8 +1,8 @@
 package response
 
 import (
-	"../../../app"
-	"../../../app/models/generated"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/null"
 	"time"

@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"../../../app"
-	"../../../app/api/response"
-	"../../../app/repository"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )

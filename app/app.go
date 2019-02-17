@@ -3,7 +3,7 @@ package app
 import (
 	"crypto/sha1"
 	"fmt"
-	"../app/models/generated"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 )
 

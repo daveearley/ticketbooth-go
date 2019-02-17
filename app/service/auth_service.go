@@ -1,11 +1,11 @@
 package service
 
 import (
-	"../../app"
-	"../../app/api/request"
-	"../../app/repository"
-	"../../app/utils"
-	"../../configs"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/repository"
+	"github.com/daveearley/ticketbooth/app/utils"
+	"github.com/daveearley/ticketbooth/configs"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )

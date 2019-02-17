@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"../../../app"
-	"../../../app/api/response"
-	"../../../app/models/generated"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/response"
+	"github.com/daveearley/ticketbooth/app/models/generated"
 	"github.com/gin-gonic/gin"
 )
 

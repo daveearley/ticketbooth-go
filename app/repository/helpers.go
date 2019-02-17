@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"../../app"
+	"github.com/daveearley/ticketbooth/app"
 	"github.com/pkg/errors"
 )
 

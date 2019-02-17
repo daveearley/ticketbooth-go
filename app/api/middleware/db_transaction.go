@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"database/sql"
-	"../../../app"
-	"../../../app/api/response"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/response"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

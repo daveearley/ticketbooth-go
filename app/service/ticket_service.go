@@ -1,11 +1,11 @@
 package service
 
 import (
-	"../../app"
-	"../../app/api/pagination"
-	"../../app/api/request"
-	"../../app/models/generated"
-	"../../app/repository"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api/pagination"
+	"github.com/daveearley/ticketbooth/app/api/request"
+	"github.com/daveearley/ticketbooth/app/models/generated"
+	"github.com/daveearley/ticketbooth/app/repository"
 	"github.com/volatiletech/null"
 	"time"
 )

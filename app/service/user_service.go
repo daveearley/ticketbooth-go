@@ -1,6 +1,6 @@
 package service
 
-import "../../app/models/generated"
+import "github.com/daveearley/ticketbooth/app/models/generated"
 
 type UserService interface {
 	CreateUser(user *models.User) (*models.User, error)

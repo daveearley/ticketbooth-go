@@ -1,13 +1,14 @@
 package main
 
 import (
-	"../../app"
-	"../../app/api"
-	"../../configs"
-	"../../database"
+	"github.com/daveearley/ticketbooth/app"
+	"github.com/daveearley/ticketbooth/app/api"
+	"github.com/daveearley/ticketbooth/configs"
+	"github.com/daveearley/ticketbooth/database"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/volatiletech/sqlboiler/boil"
+	"log"
 )
 
 func main() {
@@ -25,5 +26,8 @@ func main() {
 
 	api.BootstrapAndRegisterRoutes(server, db, config)
 
-	server.Run(config.AppHost + ":" + config.AppPort)
+	//todo handle error
+	if err := server.Run(config.AppHost + ":" + config.AppPort); err != nil {
+		log.Fatal("Server Failed")
+	}
 }
